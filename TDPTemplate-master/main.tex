@@ -73,7 +73,7 @@
 \title{RoBorregos Team Description Paper for\\
 RoboCup@Home 2027}
 
-\author{®® Luis Benvenuto \and Alejandro González-Escamilla \and Gilberto Malagamba \and Gerardo Fregoso \and Daniel Hinojosa \and Emil Winkler \and Hector Tovar \and Camila Tite \and Fernando Hernandez-Cantu \and Luis Benvenuto \and Erick Ramírez-Cedillo \and Alberto Muñoz \and Carlos Vázquez \and Luis Rosales }
+\author{Alejandro González-Escamilla \and Gilberto Malagamba \and Gerardo Fregoso \and Daniel Hinojosa \and Emil Winkler \and Hector Tovar \and Camila Tite \and Fernando Hernandez-Cantu \and Luis Benvenuto \and Erick Ramírez-Cedillo \and Alberto Muñoz \and Carlos Vázquez \and Luis Rosales }
 
 \date{
 \today\endgraf\medskip
@@ -93,7 +93,7 @@ C.P. 64849, Monterrey, N.L., Mexico\\[4pt]
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{abstract}
-This paper introduces FRIDA (Friendly Robotic Interactive Domestic Assistant), a General Purpose Service Robot developed for RoboCup@Home 2026. The system employs an architecture that integrates high-level reasoning with robust low-level actuation. The three main contributions are: (1) A clutter-aware placing strategy that optimizes target poses via spatial suitability heatmaps (95\% success rate in object-placement tasks); (2) A multi-stage interpretation pipeline employing schema-aligned parsing to bridge natural language and physical execution; and (3) A low-cost, open-source gripper with fractal structure soft fingertips designed for adaptive grasping. To support the community, the architecture, core modules and ROS 2 workspaces are open-sourced and available at: https://github.com/RoBorregos/home2.
+This paper introduces FRIDA (Friendly Robotic Interactive Domestic Assistant), a General Purpose Service Robot developed for RoboCup@Home 2027. The system employs an architecture that integrates high-level reasoning with robust low-level actuation. The three main contributions are: (1) A clutter-aware placing strategy that optimizes target poses via spatial suitability heatmaps (95\% success rate in object-placement tasks); (2) A multi-stage interpretation pipeline employing schema-aligned parsing to bridge natural language and physical execution; and (3) A low-cost, open-source gripper with fractal structure soft fingertips designed for adaptive grasping. To support the community, the architecture, core modules and ROS 2 workspaces are open-sourced and available at: https://github.com/RoBorregos/home2.
 \end{abstract}
 
 
@@ -102,15 +102,15 @@ This paper introduces FRIDA (Friendly Robotic Interactive Domestic Assistant), a
 
 % Header
 \fancyhead{}
-\fancyhead[R]{\small RoBorregos Team Description Paper for RoboCup@Home OPL 2026}
+\fancyhead[R]{\small RoBorregos Team Description Paper for RoboCup@Home OPL 2027}
 
 \section{Introduction}
-RoBorregos is the representative team of Tecnológico de Monterrey, Mexico dedicated to participating in autonomous robotics competitions since 2015. Composed exclusively of undergraduate students, the team focuses on the development and dissemination of open-source robotic technologies aimed at advancing robotics research and education in Mexico. Development for the @Home league began in 2019, debuting in Mexico's @Home Beginners category in 2021 and advancing to Open Platform League in 2023 with FRIDA (Friendly Robotic Interactive Domestic Assistant). RoBorregos entered the international stage, achieving 16th place at RoboCup 2024 and significantly improving to 6th place in 2025. Consistent with the RoboCup philosophy, RoBorregos actively contributes to the open-source community. Beyond software, we prioritize knowledge transfer: our complete source code, hardware designs, and development documentation including meeting logs and architectural decision records are publicly available. This transparency facilitates reproducibility and allows other teams to understand the rationale behind our design choices.
+RoBorregos is the representative team of Tecnológico de Monterrey, Mexico dedicated to participating in autonomous robotics competitions since 2015. Composed exclusively of undergraduate students, the team focuses on the development and dissemination of open-source robotic technologies aimed at advancing robotics research and education in Mexico. Development for the @Home league began in 2019, debuting in Mexico's @Home Beginners category in 2021 and advancing to Open Platform League in 2023 with FRIDA (Friendly Robotic Interactive Domestic Assistant). RoBorregos entered the international stage, achieving 16th place at RoboCup 2024, 6th place in 2025, and 9th place in 2026, and won 1st place at the Mexican Open 2026. Consistent with the RoboCup philosophy, RoBorregos actively contributes to the open-source community. Beyond software, we prioritize knowledge transfer: our complete source code, hardware designs, and development documentation including meeting logs and architectural decision records are publicly available. This transparency facilitates reproducibility and allows other teams to understand the rationale behind our design choices.
 
 In addition, RoBorregos has strengthened its academic footprint through collaboration with School of Engineering and Sciences at Tecnológico de Monterrey, formalized through undergraduate research projects and peer-reviewed publications available free in our documentation webpage\footnotemark\footnotetext{\url{https://athome.roborregos.com/}}. This paper outlines the team's ongoing efforts towards a robust system capable of executing complex mobile manipulation and human-interaction tasks, such as serving guests and storing groceries, under the uncertainty of real-world environments.
 
 \section{Research focus and interests}
-The FRIDA project philosophy is focused on bridging the gap between semantic reasoning and reliable actuation in unstructured domestic environments. Driven by this goal, our research for the 2026 cycle targets specific bottlenecks in service robotics to provide reproducible contributions to the community. This year, we report significant progress in:
+The FRIDA project philosophy is focused on bridging the gap between semantic reasoning and reliable actuation in unstructured domestic environments. Driven by this goal, our research for the 2027 cycle targets specific bottlenecks in service robotics to provide reproducible contributions to the community. This year, we report significant progress in:
 \begin{enumerate}
 
 \item Context-Aware Manipulation: Fused environmental heatmaps with task constraints to generate optimal object-placing poses, ensuring collision-free trajectories in high-density clutter.
@@ -129,7 +129,7 @@ The FRIDA project philosophy is focused on bridging the gap between semantic rea
 
 \section{Robot architecture}
 
-FRIDA operates on a distributed architecture built using ROS 2 Humble for communication between modules. The system is designed around a centralized task orchestrator that coordinates asynchronous independent sub-systems.
+FRIDA operates on a distributed architecture built using ROS 2 Jazzy for communication between modules. The system is designed around a centralized task orchestrator that coordinates asynchronous independent sub-systems.
 
 \subsection{Containerized Deployment}
 The software stack is containerized using Docker to facilitate seamless multi-platform deployment on both embedded NVIDIA Jetson edge devices and standard desktop workstations. By automating environment detection and isolating complex dependencies, this architecture ensures reproducibility and lowers the barrier to entry for the open-source community, allowing researchers to deploy the system without hardware-specific configuration overhead.
