@@ -213,9 +213,7 @@ YOLO11 combined with ByteTrack~\cite{bytetrack} manages short-term identity trac
 MediaPipe~\cite{mediapipe} extracts skeletal landmarks for gesture inference. A Vision Language Model (VLM)~\cite{moondream} is queried on cropped person images to infer pose and clothing attributes.
 
 \subsubsection{Object Detection.}
-A dataset pipeline combines GroundingDINO~\cite{grounding_dino} for zero-shot object discovery from user-defined classes and SAM~\cite{sam2} for mask refinement, producing clean object crops with minimal manual effort. These assets are composited onto real backgrounds to generate automatically labeled, augmented datasets for detection and segmentation. 
-
-The resulting detector achieved a mean Average Precision (mAP) of 97.76\% over an Intersection over Union (IoU) range of 0.5--0.95 on the validation set, where IoU measures the overlap between predicted bounding boxes and ground-truth bounding boxes. The model was developed using images and annotations collected during RoboCup 2025, with the entire data preparation, training, and deployment completed within a 24-hour timeframe.
+A self-hosted web pipeline\footnote{\url{https://github.com/RoBorregos/home-pipelines}} turns a 20-second phone video per object into a trained detector. GroundingDINO~\cite{grounding_dino} localizes each object from its class name and SAM3~\cite{sam3} refines its mask, producing clean crops that are reviewed in the browser and stored in a shared repository reused across parallel runs. Crops are composited onto real backgrounds to generate labeled, augmented datasets, and YOLO is trained on two NVIDIA A6000 GPUs. At RoboCup 2026, a single member operating the pipeline from a phone recorded, trained, and deployed a 30-class competition detector in 5 hours, reaching a mean Average Precision (mAP) of 97.76\% over IoU 0.5--0.95 on the validation set.
 
 For scenarios requiring immediate recognition of unseen objects without retraining, a YOLOE-based node with dynamic class configuration is available as an alternative, although supervised YOLO models provide higher accuracy and real-time performance.
 
