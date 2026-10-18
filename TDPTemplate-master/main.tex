@@ -50,6 +50,8 @@
 \usepackage{csquotes}
 \usepackage{fancyhdr}
 \usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
 \usepackage{lastpage}
 \usepackage[all]{nowidow}
 \usepackage[inline]{enumitem}
@@ -236,14 +238,29 @@ This open source research was published by RoBorregos winning 2nd Best Student P
 
 % \subsubsection{Retrieval-Augmented Generation for Grounding.} To guarantee that all commands are grounded in the robot's real world knowledge, they are processed by a RAG system. When a user's instruction is transcribed, the NLP service first queries the persistent PostgreSQL Knowledge Base. This retrieval step uses the pgvector extension to perform an efficient similarity search. It fetches relevant context such as the known location of an item, properties of an object, or details about a person, which is then dynamically injected into the command interpreter prompt. With this retrieved context, the LLM is asked to generate a command that is not only syntactically correct but also factually grounded in the robot's context.
 
+\subsection{Omnidirectional Base}
+
+\subsubsection{Motivation.} The Dashgo B1 differential-drive base restricted FRIDA to forward motion and in-place rotation, so every lateral adjustment required a multi-point maneuver. In domestic environments, where the robot must position itself precisely next to furniture and through narrow passages, this limited both navigation and mobile manipulation. Closing this item from our previous future work, the team designed and built a custom holonomic base, released as open source\footnotemark\footnotetext{\url{https://github.com/RoBorregos/home-custom-base}}.
+
+\subsubsection{Mechanical Design.} The chassis is built from aluminum extrusion profiles with MDF covers and has a 64\,cm $\times$ 50\,cm footprint. Four mecanum wheels, each driven by an EaglePower LA8308 brushless motor through a 9:1 gearbox, allow the longitudinal, lateral, and angular velocities to be controlled independently. Two RPLIDAR C1 sensors at opposite corners are merged into a single 360$^\circ$ scan.
+
+\subsubsection{Electronics and Control.} Each motor is driven by an ODrive S1 over a 500\,kbps CAN bus (Fig.~\ref{fig:omnibase}). An STM32H743 running FreeRTOS acts as the CAN master: it receives velocity commands from the ROS 2 computer or from an ESP32 Bluetooth gamepad link, computes the wheel setpoints through mecanum inverse kinematics \cite{taheri2015kinematic}, and streams telemetry back to ROS 2. A 500\,ms command watchdog and a hardware emergency stop halt the motors, and the CAN bus recovers automatically from bus-off faults.
+
+\subsubsection{On-MCU State Estimation.} A six-state Extended Kalman Filter \cite{thrun2005probabilistic} runs on the microcontroller at 50\,Hz, fusing body-frame wheel velocities with yaw and angular velocity from a BNO085 IMU. Because mecanum rollers slip during rotation, the wheel-derived angular velocity is effectively discarded and heading is taken from the IMU, with yaw outliers rejected before each correction. Running the filter on the MCU instead of in ROS 2 provides a single odometry source from boot that remains available even if the ROS 2 stack restarts.
+
+\begin{figure}[tb]
+  \centering
+  \input{TDPTemplate-master/omnibase_diagram}
+  \caption{Control architecture of the omnidirectional base.}
+  \label{fig:omnibase}
+\end{figure}
+
 \subsection{Navigation}
 
 \subsubsection{Navigation Stack Overview.} FRIDA’s navigation stack utilizes RTAB-Map in visual-SLAM mode, fusing RGB-D and LiDAR data to ensure robust loop closure under varying lighting. These pose estimates are aligned via an Extended Kalman Filter (EKF) to provide a consistent reference frame for the ROS 2 Nav2 system \cite{Das_RTABMap_SLAM_Udacity} \cite{macenski2020marathon2}. For local regulation, the system employs a Model Predictive Path Integral (MPPI) controller, enabling dynamic control for the differential-drive base.
 
 % FRIDA’s navigation stack integrates RTAB-Map for SLAM with the ROS 2 Nav2 framework for global planning and recovery behaviors \cite{Das_RTABMap_SLAM_Udacity} \cite{macenski2020marathon2}. For local regulation, the system employs a Model Predictive Path Integral (MPPI) controller, which enables dynamic control for the differential-drive base, while an omnidirectional platform is under active development for future iterations.
 
-\subsubsection{Base and State Estimation.}
-The Dashgo B1 base interfaced through an STM32 based controller with a custom ROS 2 driver. Odometry is obtained by fusing wheel encoder data and IMU measurements via an EKF. This improves pose stability and reduces the impact of wheel slip, providing a reliable reference frame for both global planning and local control, especially during precise maneuvers.\cite{thrun2005probabilistic}
 
 \subsubsection{Behavior Tree and Costmaps.}
 Task-level navigation utilizes Nav2’s behavior tree architecture \cite{macenski2020marathon2} to orchestrate planning and autonomous recovery, ensuring robust execution during runtime failures. FRIDA uses both local and global costmaps, integrating data from the RP Lidar A1 and RGB-D perception, which enables obstacle inflation and dynamic obstacle avoidance while selecting efficient and safe paths.

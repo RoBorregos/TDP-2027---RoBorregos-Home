@@ -1,0 +1,17 @@
+\begin{tikzpicture}[font=\scriptsize, node distance=5mm and 9mm,
+  blk/.style={draw, rounded corners=2pt, align=center, minimum height=7mm, inner sep=3pt, fill=gray!8},
+  mcu/.style={blk, fill=blue!10, thick},
+  lnk/.style={-latex, thick}]
+  \node[mcu] (stm) {STM32H743 (FreeRTOS)\\mecanum IK $\cdot$ 6-state EKF\\watchdog $\cdot$ e-stop};
+  \node[blk, left=11mm of stm] (ros) {ROS 2\\Jetson AGX Orin};
+  \node[blk, above=of stm] (esp) {ESP32\\BT gamepad};
+  \node[blk, below=of stm] (imu) {BNO085 IMU};
+  \node[blk, right=of stm] (od) {4$\times$ ODrive S1};
+  \node[blk, below=of od] (mot) {4$\times$ LA8308\\9:1, mecanum};
+  \draw[lnk] ([yshift=1.2mm]ros.east) -- node[above] {cmd} ([yshift=1.2mm]stm.west);
+  \draw[lnk] ([yshift=-1.2mm]stm.west) -- node[below] {odom} ([yshift=-1.2mm]ros.east);
+  \draw[lnk] (esp) -- node[right] {UART} (stm);
+  \draw[lnk] (imu) -- node[right] {I$^2$C} (stm);
+  \draw[lnk, latex-latex] (stm) -- node[above] {CAN} (od);
+  \draw[lnk, latex-latex] (od) -- (mot);
+\end{tikzpicture}
