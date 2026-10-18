@@ -207,7 +207,7 @@ Object Placing & 19 & 20 & 95\% \\
 DLib’s pretrained ResNet-based model~\cite{face_recognition} generates 128-dimensional facial embeddings, reused across frames via spatial tracking to reduce computation.
 
 \subsubsection{Person Tracking and Re-identification.}
-YOLO11 combined with ByteTrack~\cite{bytetrack} manages short-term identity tracking, while a Re-ID module recovers identities after occlusions. Several models trained on Market1501 using the Person ReID baseline~\cite{joint_reid} were evaluated, with Swin chosen for its more discriminative embeddings. Identity matching is performed using cosine similarity. For real-time performance, multi-view augmentation stores multiple embeddings of the target across different viewpoints (e.g., front, back, and side) to improve robustness to pose and appearance changes. Feature extraction is rate-limited and reused, ByteTrack narrows candidate matches, and GPU acceleration is leveraged for batched feature extraction and similarity computation, where batches consist of cropped person images from all current detections processed simultaneously.
+YOLOv8n with ByteTrack~\cite{bytetrack} tracks the person being followed frame by frame, while a Re-ID module recovers the identity after occlusions. The Re ID network is a Swin Transformer trained on Market1501 with the Person ReID baseline~\cite{joint_reid}, chosen for its discriminative embeddings. While the target is visible, its embeddings are stored at a limited rate in a rolling gallery of up to 128 vectors, which captures appearance changes as the person moves. When the track is lost, each visible person is compared against the gallery by cosine similarity, and the best match. Re ID runs asynchronously in FP16 on the GPU, keeping the tracking loop fast.
 
 \subsubsection{Pose and Gesture Recognition.}
 MediaPipe~\cite{mediapipe} extracts skeletal landmarks for gesture inference. A Vision Language Model (VLM)~\cite{moondream} is queried on cropped person images to infer pose and clothing attributes.
@@ -215,7 +215,8 @@ MediaPipe~\cite{mediapipe} extracts skeletal landmarks for gesture inference. A 
 \subsubsection{Object Detection.}
 A self-hosted web pipeline\footnote{\url{https://github.com/RoBorregos/home-pipelines}} turns a 20-second phone video per object into a trained detector. GroundingDINO~\cite{grounding_dino} localizes each object from its class name and SAM3~\cite{sam3} refines its mask, producing clean crops that are reviewed in the browser and stored in a shared repository reused across parallel runs. Crops are composited onto real backgrounds to generate labeled, augmented datasets, and YOLO is trained on two NVIDIA A6000 GPUs. At RoboCup 2026, a single member operating the pipeline from a phone recorded, trained, and deployed a 30-class competition detector in 5 hours, reaching a mean Average Precision (mAP) of 97.76\% over IoU 0.5--0.95 on the validation set.
 
-For scenarios requiring immediate recognition of unseen objects without retraining, a YOLOE-based node with dynamic class configuration is available as an alternative, although supervised YOLO models provide higher accuracy and real-time performance.
+\subsubsection{Few-shot Object Recognition (Embedding Gallery).}
+For objects announced shortly before a test, we added a path that needs only 15/20 photos per class and no retraining. YOLOE~\cite{yoloe} proposes class agnostic boxes, DINOv2~\cite{dinov2} embeds each crop, and the crop is compared by cosine similarity against the gallery embeddings of each class. It is less precise than our main supervised detector, but still performs well, 92.2\% proposal recall and 80.6\% gated recall@1.
 
 \subsection{Human-Robot Interaction (HRI)}
 
