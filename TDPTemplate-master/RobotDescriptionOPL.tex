@@ -14,7 +14,7 @@
 
 \begin{itemize}
 	\item Base: Custom omnidirectional base with four mecanum wheels.
-	\item Motors and drivers: Four EaglePower LA8308 90KV brushless motors, each driven by an ODrive S1 over CAN.
+	\item Motors and drivers: Four EaglePower LA8308 90KV brushless motors with 9:1 gearboxes, each driven by an ODrive S1 over CAN.
 	\item Base controller: STM32H755 running FreeRTOS for the mecanum kinematics and an on-board EKF that fuses wheel odometry with a BNO085 IMU. An ESP32 provides Bluetooth gamepad teleoperation.
 	\item Computers: Two NVIDIA Jetson AGX Orin 64GB.
 	\item Batteries: One 25.6 V, 25 Ah (640 Wh) LiFePO4 pack of eight 3.2 V cells in series with a Daly BMS powers the whole robot.
@@ -33,7 +33,7 @@
 \begin{itemize}
 	\item Platform: ROS 2, Jazzy distribution.
     \item Integration: Docker
-	\item Navigation: ROS 2 Navigation Stack, RTAB-Map
+	\item Navigation: ROS 2 Navigation Stack (Nav2), slam\_toolbox
 	\item Person analysis: Torch, InsightFace, YOLO11-pose, MediaPipe, ByteTrack, Moondream2
 	\item Speech recognition: WhisperLive with faster-whisper
     \item Keyword spotting: Open Wake Word
