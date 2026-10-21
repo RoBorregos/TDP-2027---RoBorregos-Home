@@ -95,7 +95,7 @@ C.P. 64849, Monterrey, N.L., Mexico\\[4pt]
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{abstract}
-This paper introduces FRIDA (Friendly Robotic Interactive Domestic Assistant), a General Purpose Service Robot developed for RoboCup@Home 2027. The system employs an architecture that integrates high-level reasoning with robust low-level actuation. The three main contributions are: (1) A clutter-aware placing strategy that optimizes target poses via spatial suitability heatmaps (95\% success rate in object-placement tasks); (2) A multi-stage interpretation pipeline employing schema-aligned parsing to bridge natural language and physical execution; and (3) A low-cost, open-source gripper with fractal structure soft fingertips designed for adaptive grasping. To support the community, the architecture, core modules and ROS 2 workspaces are open-sourced and available at: https://github.com/RoBorregos/home2.
+This paper introduces FRIDA (Friendly Robotic Interactive Domestic Assistant), a General Purpose Service Robot developed for RoboCup@Home 2027. The system employs an architecture that integrates high-level reasoning with robust low-level actuation. The four main contributions are: (1) A clutter-aware placing strategy that optimizes target poses via spatial suitability heatmaps (95\% success rate in object-placement tasks); (2) A multi-stage interpretation pipeline employing schema-aligned parsing to bridge natural language and physical execution; (3) A low-cost, open-source gripper with fractal structure soft fingertips designed for adaptive grasping; and (4) An open-source omnidirectional mecanum base whose microcontroller runs the drive kinematics and odometry fusion, enabling holonomic motion in confined domestic spaces. To support the community, the architecture, core modules and ROS 2 workspaces are open-sourced and available at: https://github.com/RoBorregos/home2.
 \end{abstract}
 
 
@@ -125,7 +125,7 @@ The FRIDA project philosophy is focused on bridging the gap between semantic rea
 
 % \item Battery Monitoring: Integrating an intelligent Battery Management System for real-time power consumption and efficiency tracking.
 
-% \item Omnibase: Research focused on motor control integration, actuator–controller interfaces, and CAN-based communication required for enabling a holonomic mobility system on FRIDA.
+\item Holonomic Mobility: Replaced the differential-drive Dashgo B1 with a custom open-source mecanum base that runs its kinematics and EKF odometry on the microcontroller, allowing FRIDA to reposition laterally next to furniture and through narrow passages during tasks such as storing groceries or serving breakfast.
 
 \end{enumerate}
 
