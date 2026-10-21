@@ -2,7 +2,7 @@
   blk/.style={draw, rounded corners=2pt, align=center, minimum height=7mm, inner sep=3pt, fill=gray!8},
   mcu/.style={blk, fill=blue!10, thick},
   lnk/.style={-latex, thick}]
-  \node[mcu] (stm) {STM32H743 (FreeRTOS)\\mecanum IK $\cdot$ 6-state EKF\\watchdog $\cdot$ e-stop};
+  \node[mcu] (stm) {STM32H755 (FreeRTOS)\\mecanum IK $\cdot$ 6-state EKF\\watchdog $\cdot$ e-stop};
   \node[blk, left=11mm of stm] (ros) {ROS 2\\Jetson AGX Orin};
   \node[blk, above=of stm] (esp) {ESP32\\BT gamepad};
   \node[blk, below=of stm] (imu) {BNO085 IMU};
