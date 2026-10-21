@@ -114,6 +114,7 @@ In addition, RoBorregos has strengthened its academic footprint through collabor
 \section{Research focus and interests}
 The FRIDA project philosophy is focused on bridging the gap between semantic reasoning and reliable actuation in unstructured domestic environments. Driven by this goal, our research for the 2027 cycle targets specific bottlenecks in service robotics to provide reproducible contributions to the community. This year, we report significant progress in:
 \begin{enumerate}
+\item Semantic Navigation over a Scene Graph: A room-furniture-object memory with multimodal retrieval, in conjunction with Vision, HRI, and Manipulation, enables the robot to determine where objects are and where to stand in order to locate them. Navigation helps with per-surface staleness tracking and sensing-aware viewpoint planning; the object detector reaches 2.0 m.
 
 \item Context-Aware Manipulation: Fused environmental heatmaps with task constraints to generate optimal object-placing poses, ensuring collision-free trajectories in high-density clutter.
 
@@ -238,7 +239,7 @@ This open source research was published by RoBorregos winning 2nd Best Student P
 
 % \subsubsection{Retrieval-Augmented Generation for Grounding.} To guarantee that all commands are grounded in the robot's real world knowledge, they are processed by a RAG system. When a user's instruction is transcribed, the NLP service first queries the persistent PostgreSQL Knowledge Base. This retrieval step uses the pgvector extension to perform an efficient similarity search. It fetches relevant context such as the known location of an item, properties of an object, or details about a person, which is then dynamically injected into the command interpreter prompt. With this retrieved context, the LLM is asked to generate a command that is not only syntactically correct but also factually grounded in the robot's context.
 
-\subsection{Omnidirectional Base}
+\subsection{Omnidirectional Base}\label{sec:omnibase}
 
 \subsubsection{Motivation.} The Dashgo B1 differential-drive base restricted FRIDA to forward motion and in-place rotation, so every lateral adjustment required a multi-point maneuver. In domestic environments, where the robot must position itself precisely next to furniture and through narrow passages, this limited both navigation and mobile manipulation. Closing this item from our previous future work, the team designed and built a custom holonomic base, released as open source\footnotemark\footnotetext{\url{https://github.com/RoBorregos/home-custom-base}}.
 
@@ -257,13 +258,34 @@ This open source research was published by RoBorregos winning 2nd Best Student P
 
 \subsection{Navigation}
 
-\subsubsection{Navigation Stack Overview.} FRIDA’s navigation stack utilizes RTAB-Map in visual-SLAM mode, fusing RGB-D and LiDAR data to ensure robust loop closure under varying lighting. These pose estimates are aligned via an Extended Kalman Filter (EKF) to provide a consistent reference frame for the ROS 2 Nav2 system \cite{Das_RTABMap_SLAM_Udacity} \cite{macenski2020marathon2}. For local regulation, the system employs a Model Predictive Path Integral (MPPI) controller, enabling dynamic control for the differential-drive base.
+\subsubsection{Stack overview.}
+FRIDA runs ROS~2 Jazzy with Nav2~\cite{macenski2020marathon2} in a single
+navigation container. Two RPLIDAR~C1 sensors at opposite corners of the base
+(Sec.~\ref{sec:omnibase}) are merged into one 360$^\circ$ scan that feeds both
+mapping and the costmaps. We moved from RTAB-Map visual SLAM to slam\_toolbox
+\cite{macenski2021slamtoolbox} on the 2D lidar scan. With two lidars the
+base already provides full 360$^\circ$ coverage, so visual loop closure is no
+longer needed to keep the map consistent. The software is also distributed over
+two Jetson AGX Orin computers, and a lidar-only SLAM needs no camera stream.
+Localization runs on the EKF odometry published by the base controller, so the
+navigation stack sees a single odometry source from boot.
+
+\subsubsection{Local control for a holonomic base.}
+The previous controller targeted a differential-drive base. The MPPI controller
+is now configured for omnidirectional motion, with a 0.45\,m inflation radius
+% footprint: use the same value as Sec. 4.5 and the annex (64x50 vs 0.65x0.50)
+and the robot footprint of Sec.~\ref{sec:omnibase}, which allows plans to use
+lateral motion instead of turn-drive-turn maneuvers near furniture.
+
+\subsubsection{Orchestration and fault handling.}
+\texttt{nav\_central} orchestrates the stack. It manages the lifecycle of SLAM
+and Nav2, monitors the topics and TF frames they depend on, and pauses and
+resumes both when a topic or transform drops, instead of letting Nav2 act on
+stale data. It also exposes the navigation services used by the task manager
+(go to area, dock to table, approach direction, point-to-area lookup), so
+higher layers never touch Nav2 directly.
 
 % FRIDA’s navigation stack integrates RTAB-Map for SLAM with the ROS 2 Nav2 framework for global planning and recovery behaviors \cite{Das_RTABMap_SLAM_Udacity} \cite{macenski2020marathon2}. For local regulation, the system employs a Model Predictive Path Integral (MPPI) controller, which enables dynamic control for the differential-drive base, while an omnidirectional platform is under active development for future iterations.
-
-
-\subsubsection{Behavior Tree and Costmaps.}
-Task-level navigation utilizes Nav2’s behavior tree architecture \cite{macenski2020marathon2} to orchestrate planning and autonomous recovery, ensuring robust execution during runtime failures. FRIDA uses both local and global costmaps, integrating data from the RP Lidar A1 and RGB-D perception, which enables obstacle inflation and dynamic obstacle avoidance while selecting efficient and safe paths.
 
 
 
@@ -291,6 +313,7 @@ The contributions to the @Home league include general-purpose modules for percep
 
 \bibliographystyle{unsrt}
 \bibliography{bibliography}
+
 
 \newpage
 
