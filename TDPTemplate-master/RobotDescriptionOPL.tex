@@ -17,14 +17,14 @@
 	\item Motors and drivers: Four EaglePower LA8308 90KV brushless motors with 9:1 gearboxes, each driven by an ODrive S1 over CAN.
 	\item Base controller: STM32H755 running FreeRTOS for the mecanum kinematics and an on-board EKF that fuses wheel odometry with a BNO085 IMU. An ESP32 provides Bluetooth gamepad teleoperation.
 	\item Computers: Two NVIDIA Jetson AGX Orin 64GB.
-	\item Batteries: One 25.6 V, 25 Ah (640 Wh) LiFePO4 pack of eight 3.2 V cells in series with a Daly BMS powers the whole robot.
+	\item Batteries: One 25.6 V, 25 Ah (640 Wh) LiFePO4 pack of eight 3.2 V cells in series with a Daly BMS.
 	\item Manipulator: xArm 6.
-    \item Gripper: 2 finger parallel custom 3D printed gripper with force resistive sensors on each finger and an IR sensor for detecting objects in front of it. It uses an ESP32 as the microcontroller.
+    \item Gripper:.
 	\item Vision: Stereolabs ZED2 camera attached to the EOF of the xArm that runs the vision tasks and transmits data through a USB cable to the Jetson Orin.
         \item HRI: Seed Studio ReSpeaker Microphone array, Logitech X100 Wireless Portable Speaker, and a HDMI LCD touch screen 7" display.
         \item Navigation: Two RPLIDAR C1 at opposite corners of the base, merged into a single 360$^\circ$ scan.
         \item Base cover: Aluminum profile frame with MDF covers to protect and secure the interior electronics and components.
-	\item Robot dimensions: Height 170 cm (fully extended), base footprint 64 cm $\times$ 50 cm
+	\item Robot dimensions: Height 180 cm (fully extended), base footprint 64 cm $\times$ 50 cm
 	\item Robot weight: 46 kg.
 \end{itemize}
 

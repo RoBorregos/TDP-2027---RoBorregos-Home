@@ -114,19 +114,15 @@ In addition, RoBorregos has strengthened its academic footprint through collabor
 \section{Research focus and interests}
 The FRIDA project philosophy is focused on bridging the gap between semantic reasoning and reliable actuation in unstructured domestic environments. Driven by this goal, our research for the 2027 cycle targets specific bottlenecks in service robotics to provide reproducible contributions to the community. This year, we report significant progress in:
 \begin{enumerate}
-\item Semantic Navigation over a Scene Graph: A room-furniture-object memory with multimodal retrieval, in conjunction with Vision, HRI, and Manipulation, enables the robot to determine where objects are and where to stand in order to locate them. Navigation helps with per-surface staleness tracking and sensing-aware viewpoint planning; the object detector reaches 2.0 m.
 
 \item Context-Aware Manipulation: Fused environmental heatmaps with task constraints to generate optimal object-placing poses, ensuring collision-free trajectories in high-density clutter.
-
-\item Latency-Optimized Perception: Implemented hierarchical parallel filtering to prioritize near-field detail, significantly reducing planning latency without stalling the loop.
 
 \item Reliable Neuro-Symbolic Grounding: Developed a synthetic dataset pipeline to fine-tune LLMs for reliable instruction grounding, a contribution recently published in MICAI \cite{10.1007/978-3-032-09037-9_24}.
 
 \item Segmentation Dataset Pipeline: Upgraded semi-automatic data generation from bounding boxes to instance segmentation masks for cleaner annotations and more robust training.
 
-% \item Battery Monitoring: Integrating an intelligent Battery Management System for real-time power consumption and efficiency tracking.
 
-\item Holonomic Mobility: Replaced the differential-drive Dashgo B1 with a custom open-source mecanum base that runs its kinematics and EKF odometry on the microcontroller, allowing FRIDA to reposition laterally next to furniture and through narrow passages during tasks such as storing groceries or serving breakfast.
+\item Holonomic Mobility: Replaced the differential-drive Dashgo B1 with a custom open-source mecanum base that runs its kinematics and EKF odometry.
 
 \end{enumerate}
 
@@ -152,17 +148,16 @@ The system is built on a multi-layered architecture that adheres to modern softw
 \subsubsection{Task Planning.} The use of FSMs facilitates logic-driven translation of complex tasks into concrete and robust robotic behaviors. It allows the incorporation of dynamic planning and fault tolerance which enables: receiving feedback for grounding the robot's actions, ease of testing by mocking responses from certain modules, and the incorporation of retry mechanisms in case sub-task functions fail, along with fallback policies involving asking humans for help (Deus ex machina).
 
 \subsection{Object Manipulation}
-% The developed pipeline enables interaction with a 6-degree-of-freedom (DOF) robotic arm and its gripper  to perform manipulation tasks specifically picking and placing objects, as well as pouring cereal into a container by integrating image processing, perception, and motion planning components.
+
 The manipulation pipeline integrates perception, planning, and a custom end-effector to perform robust picking, placing, and pouring tasks.
 
 \subsubsection{Motion Planning Strategy.} 
 RRTConnect \cite{kuffner2000rrt} is employed to generate collision-free trajectories, applying path constraints in the configuration space to maintain end-effector orientation (e.g., to prevent spillage). 
 To minimize latency, the planning scene is abstracted: RANSAC \cite{martinez2022ransac} segments the table plane and object clusters, which are then approximated as primitive boxes and bounding spheres. This geometric simplification reduces collision checking from expensive mesh-to-mesh queries to efficient algebraic primitive tests.
-% A hybrid architecture is employed where RRTConnect \cite{kuffner2000rrt}  generates collision-free trajectories for complex tasks, enforcing orientation constraints (e.g., maintaining container stability during pouring). The planning scene is optimized by modeling the table as a primitive box and obstacles as spheres via RANSAC \cite{martinez2022ransac}, significantly reducing collision-checking computation.
+
 
 \subsubsection{Picking.} Target objects are isolated by fusing 2D detections with 3D point clouds using multi-threaded parallel filtering and variable-resolution downsampling to maximize CPU throughput. Grasp Pose Detection (GPD) \cite{ten2017grasp} generates candidate poses within this simplified scene, which are executed by the motion planner.
 
-% \subsubsection{Picking Task.} To accurately isolate target object clusters, 2D detection data is fused with 3D point clouds. To minimize latency, the pipeline applies parallel filtering and variable-resolution downsampling. The planning scene is optimized by modeling the table as a primitive box and obstacles as spheres via RANSAC \cite{martinez2022ransac}. Finally, GPD \cite{ten2017grasp} interprets object clusters, enabling MoveIt! \cite{chitta2012moveit} to generate collision-free trajectories within this simplified environment.
 
 \subsubsection{Placing \& Pouring.} Both tasks require strict constraint handling. For placing, a suitability costmap is generated by fusing a base Gaussian distribution (favoring free space) with a constraint heatmap created by projecting Gaussian fields along relative vectors (e.g., for "place in front of X") (Fig. \ref{fig: heatmap}).
 Similarly, for pouring, PCL \cite{rusu20113d} analyzes the container’s rim height to define a trajectory that strictly respects the orientation constraints defined in the motion planning phase.
@@ -174,7 +169,6 @@ Similarly, for pouring, PCL \cite{rusu20113d} analyzes the container’s rim hei
     \label{fig: heatmap}
 \end{figure}
 
-% \subsubsection{Pouring Strategy.} The container's 3D cluster is analyzed via PCL \cite{rusu20113d} to determine its centroid and rim height. A \verb|pour_pose| is defined above the center, retaining the gripper's pick orientation. The \verb|PourMotion| server uses MoveIt! \cite{chitta2012moveit} with dynamic orientation path constraints to prevent spillage.
 \subsubsection{Experimental Validation.} Robustness was evaluated through 40 trials (20 picking, 20 placing), with randomized configurations of household objects (e.g., an apple surrounded by diverse objects). Results are shown in Table \ref{tab:manipulation_results}.
 
 \textit{Picking Reliability.} Failures stemmed primarily from motion planning constraints in high density scenarios and dynamic interactions with spherical objects (e.g., orange rolling upon contact).
@@ -207,7 +201,7 @@ Object Placing & 19 & 20 & 95\% \\
 \subsection{Computer Vision}
 
 \subsubsection{Face Recognition.}
-DLib’s pretrained ResNet-based model~\cite{face_recognition} generates 128-dimensional facial embeddings, reused across frames via spatial tracking to reduce computation.
+
 
 \subsubsection{Person Tracking and Re-identification.}
 YOLOv8n with ByteTrack~\cite{bytetrack} tracks the person being followed frame by frame, while a Re-ID module recovers the identity after occlusions. The Re ID network is a Swin Transformer trained on Market1501 with the Person ReID baseline~\cite{joint_reid}, chosen for its discriminative embeddings. While the target is visible, its embeddings are stored at a limited rate in a rolling gallery of up to 128 vectors, which captures appearance changes as the person moves. When the track is lost, each visible person is compared against the gallery by cosine similarity, and the best match. Re ID runs asynchronously in FP16 on the GPU, keeping the tracking loop fast.
@@ -231,37 +225,16 @@ For objects announced shortly before a test, we added a path that needs only 15/
 
 The dataset is generated through a structured pipeline that begins with a set of predefined command templates which are populated with random variable entities (e.g., names, locations, and objects) and follow-up instructions. Entries are then generated by outputting a paraphrased natural-language instruction and a corresponding structured action plan composed of predefined primitive actions. During inference, the BAML framework parses the LLM's output into a strict JSON format avoiding action-level hallucinations, and a RAG system grounds commands ensuring entities are present in the current context.
 
-% These templates are automatically populated with variable entities (e.g., names, locations, and objects), after which additional follow-up instructions are randomly selected and appended. Each entry in the dataset comprises two synchronized outputs: a paraphrased natural-language instruction, and a corresponding structured action plan composed of predefined primitive actions.
-
-% To ensure robust command generation, the BAML framework is integrated as a proactive validation layer. By defining a strict data schema, the LLM's output is forced into a correct, parsable JSON format, avoiding action-level hallucinations. Additionally, the output is processed by a RAG system to ground the command into the robot's knowledge using PostgreSQL with the pgvector extension to perform efficient similarity searches.
     
 This open source research was published by RoBorregos winning 2nd Best Student Paper at the 24th Mexican International Conference on Artificial Intelligence~\cite{10.1007/978-3-032-09037-9_24}.
 
-% \subsubsection{Retrieval-Augmented Generation for Grounding.} To guarantee that all commands are grounded in the robot's real world knowledge, they are processed by a RAG system. When a user's instruction is transcribed, the NLP service first queries the persistent PostgreSQL Knowledge Base. This retrieval step uses the pgvector extension to perform an efficient similarity search. It fetches relevant context such as the known location of an item, properties of an object, or details about a person, which is then dynamically injected into the command interpreter prompt. With this retrieved context, the LLM is asked to generate a command that is not only syntactically correct but also factually grounded in the robot's context.
-
-\subsection{Omnidirectional Base}\label{sec:omnibase}
-
-\subsubsection{Motivation.} The Dashgo B1 differential-drive base restricted FRIDA to forward motion and in-place rotation, so every lateral adjustment required a multi-point maneuver, limiting navigation and mobile manipulation next to furniture and in narrow passages. Closing this item from our previous future work, the team designed and built a custom holonomic base, released as open source\footnotemark\footnotetext{\url{https://github.com/RoBorregos/home-custom-base}}.
-
-\subsubsection{Mechanical Design.} The chassis is built from aluminum extrusion profiles with MDF covers and has a 64\,cm $\times$ 50\,cm footprint. Four mecanum wheels, each driven by an EaglePower LA8308 brushless motor through a 9:1 gearbox, allow the longitudinal, lateral, and angular velocities to be controlled independently. Mecanum wheels were chosen over omni wheels for their higher load capacity and stability. Two RPLIDAR C1 sensors at opposite corners are merged into a single 360$^\circ$ scan.
-
-\subsubsection{Electronics and Control.} Each motor is driven by an ODrive S1, and the four drives share a 500\,kbps CAN bus (Fig.~\ref{fig:omnibase}). An STM32H755 running FreeRTOS acts as the CAN master: it receives velocity commands from the ROS 2 computer or from an ESP32 Bluetooth gamepad link, computes the wheel setpoints through mecanum inverse kinematics \cite{taheri2015kinematic}, and streams telemetry back to ROS 2. A 500\,ms command watchdog and a hardware emergency stop halt the motors, and the CAN bus recovers automatically from bus-off faults.
-
-\subsubsection{On-MCU State Estimation.} A six-state Extended Kalman Filter \cite{thrun2005probabilistic} runs on the microcontroller at 50\,Hz, fusing body-frame wheel velocities with yaw and angular velocity from a BNO085 IMU. Because mecanum rollers slip during rotation, the wheel-derived angular velocity is effectively discarded and heading is taken from the IMU, with yaw outliers rejected before each correction. Running the filter on the MCU instead of in ROS 2 provides a single odometry source from boot that remains available even if the ROS 2 stack restarts.
-
-\begin{figure}[tb]
-  \centering
-  \input{TDPTemplate-master/omnibase_diagram}
-  \caption{Control architecture of the omnidirectional base.}
-  \label{fig:omnibase}
-\end{figure}
 
 \subsection{Navigation}
 
 \subsubsection{Stack overview.}
 FRIDA runs ROS~2 Jazzy with Nav2~\cite{macenski2020marathon2} in a single
 navigation container. Two RPLIDAR~C1 sensors at opposite corners of the base
-(Sec.~\ref{sec:omnibase}) are merged into one 360$^\circ$ scan that feeds both
+are merged into one 360$^\circ$ scan that feeds both
 mapping and the costmaps. We moved from RTAB-Map visual SLAM to slam\_toolbox
 \cite{macenski2021slamtoolbox} on the 2D lidar scan. With two lidars the
 base already provides full 360$^\circ$ coverage, so visual loop closure is no
@@ -270,45 +243,18 @@ two Jetson AGX Orin computers, and a lidar-only SLAM needs no camera stream.
 Localization runs on the EKF odometry published by the base controller, so the
 navigation stack sees a single odometry source from boot.
 
-\subsubsection{Local control for a holonomic base.}
-The previous controller targeted a differential-drive base. The MPPI controller
-is now configured for omnidirectional motion, with a 0.45\,m inflation radius
-% footprint: use the same value as Sec. 4.5 and the annex (64x50 vs 0.65x0.50)
-and the robot footprint of Sec.~\ref{sec:omnibase}, which allows plans to use
-lateral motion instead of turn-drive-turn maneuvers near furniture.
-
 \subsubsection{Orchestration and fault handling.}
-\texttt{nav\_central} orchestrates the stack. It manages the lifecycle of SLAM
-and Nav2, monitors the topics and TF frames they depend on, and pauses and
-resumes both when a topic or transform drops, instead of letting Nav2 act on
-stale data. It also exposes the navigation services used by the task manager
+\texttt{nav\_central} orchestrates the stack. It manages the Nav2 lifecycle,
+monitors the topics and TF frames the stack depends on, and pauses Nav2 when a
+topic or transform drops, resuming it once they return, instead of letting it
+act on stale data; slam\_toolbox runs as a respawning node and recovers on its
+own. It also exposes the navigation services used by the task manager
 (go to area, dock to table, approach direction, point-to-area lookup), so
 higher layers never touch Nav2 directly.
 
-% FRIDA’s navigation stack integrates RTAB-Map for SLAM with the ROS 2 Nav2 framework for global planning and recovery behaviors \cite{Das_RTABMap_SLAM_Udacity} \cite{macenski2020marathon2}. For local regulation, the system employs a Model Predictive Path Integral (MPPI) controller, which enables dynamic control for the differential-drive base, while an omnidirectional platform is under active development for future iterations.
-
-
-
-%  ELECTRONICA ------------------------------------------------------------
-% \subsection{Electronics}
-% The electronics development for FRIDA includes a custom Battery Management System currently in design and aimed for future manufacturing. The BMS is intended to support multi-cell Li-ion battery packs and provide the necessary protection, monitoring, and communication features for a high-power robotic platform.
-
-% \subsubsection{Monitoring and Protection.}
-% The system is designed to measure cell voltages, pack voltage, pack current, and both pack and MOSFET temperatures. Thermal protection is provided through integrated thermistors that react immediately when the battery is connected, and a high-current fuse offers an additional safeguard. Cell-level measurements rely on a Texas Instruments single-cell monitor that provides precise sensing, passive balancing, and the communication layer for reporting diagnostic data.
-
-% \subsubsection{Power Stage and Interfaces.}The charge and discharge paths are managed by MOSFET-based protection switches, supported by a current-monitoring stage that supervises electrical behavior during operation. The interface layer includes CAN, USB in CDC-ACM and JTAG modes, USART, I2C, WiFi, and Bluetooth Low Energy, allowing both wired and wireless configuration. A reset control and an on-off switch are included to simplify development and testing.
-
-% \subsubsection{Future work.}
-% The design is inspired by the open-source Libre Solar BMS C1 \cite{LibreSolarBMS}    platform, whose repositories guided the early development process.Upcoming work will focus on refining the monitoring capabilities, validating the protection mechanisms, and integrating the power subsystem with the evolving mechanical and computational demands of the omnidirectional base. These developments aim to establish a reliable and extensible electrical foundation for future versions of FRIDA.
-
-
 \section{Conclusions and future work}
-%The contributions to the @Home league include general-purpose modules for each of the development areas, integrated into a cohesive layered architecture. Participation in RoboCup 2025 provided valuable insights into FRIDA's system maturity under competitive conditions. Moving forward, the team is committed to enhancing performance in real-world tasks, spanning from HRI to low-level control systems. In particular, the migration to an omnidirectional base is a key priority to enhance robot mobility and maneuverability, alongside ongoing developments and continued contributions to the supporting open-source ecosystem.
 
 The contributions to the @Home league include general-purpose modules for perception, manipulation, navigation, and HRI, integrated into a cohesive layered architecture. Participation in RoboCup 2026 demonstrated FRIDA’s ability to perform core @Home tasks such as speech-based interaction, person and object recognition, autonomous navigation, and object picking and placing in cluttered environments. Current limitations include two-handed tasks such as lifting a laundry basket or folding clothes, imposed by a single arm with limited reach and an on-arm camera, motivating future work on a bimanual platform, Vision-Language-Action (VLA) models, imitation learning, and a static camera for real-time feedback.
-
-% Future work will focus on developing the low-level control layer for the omnidirectional base, using an STM32H755 to coordinate the four drive modules by sending motor commands over CAN to the motor drivers. The controller will also integrate an onboard IMU to support improved odometry and synchronization with the robot’s navigation and localization stack. 
-% With consistent progress demonstrated year after year, the achievements outlined in this TDP reflect the strong collaborative foundation and promising trajectory of the team.
 
 
 \bibliographystyle{unsrt}
