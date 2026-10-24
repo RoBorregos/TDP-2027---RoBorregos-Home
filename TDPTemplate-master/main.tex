@@ -75,7 +75,7 @@
 \title{RoBorregos Team Description Paper for\\
 RoboCup@Home 2027}
 
-\author{Alejandro González-Escamilla \and Gilberto Malagamba \and Gerardo Fregoso \and Daniel Hinojosa \and Emil Winkler \and Hector Tovar \and Camila Tite \and Fernando Hernandez-Cantu \and Luis Benvenuto \and Erick Ramírez-Cedillo \and Alberto Muñoz \and Carlos Vázquez \and Luis Rosales }
+\author{José Domínguez \and Alejandro González-Escamilla \and Gilberto Malagamba \and Gerardo Fregoso \and Luis Rosales \and Emil Winkler \and Camila Tite \and Fernando Hernandez-Cantu \and Luis Benvenuto \and Erick Ramírez-Cedillo \and Alberto Muñoz \and Carlos Vázquez  }
 
 \date{
 \today\endgraf\medskip
@@ -232,25 +232,30 @@ This open source research was published by RoBorregos winning 2nd Best Student P
 \subsection{Navigation}
 
 \subsubsection{Stack overview.}
-FRIDA runs ROS~2 Jazzy with Nav2~\cite{macenski2020marathon2} in a single
-navigation container. Two RPLIDAR~C1 sensors at opposite corners of the base
-are merged into one 360$^\circ$ scan that feeds both
-mapping and the costmaps. We moved from RTAB-Map visual SLAM to slam\_toolbox
-\cite{macenski2021slamtoolbox} on the 2D lidar scan. With two lidars the
-base already provides full 360$^\circ$ coverage, so visual loop closure is no
-longer needed to keep the map consistent. The software is also distributed over
-two Jetson AGX Orin computers, and a lidar-only SLAM needs no camera stream.
-Localization runs on the EKF odometry published by the base controller, so the
-navigation stack sees a single odometry source from boot.
+FRIDA's navigation is built on the ROS~2 Navigation Stack
+Nav2~\cite{macenski2020marathon2} and runs inside a single Docker container.
+SLAM Toolbox~\cite{macenski2021slamtoolbox} builds 2D maps of the arena from
+the combined scan of the two RPLIDAR~C1 sensors, using graph-based SLAM with
+loop closure, and is then run in localization mode on the saved map. Wheel and
+inertial odometry are fused by an EKF on the base controller
+and provide the motion estimate for localization.
+\subsubsection{Planning and Control.}
+Global paths are computed with Nav2's NavFn planner using A* search, while a
+Model Predictive Path Integral (MPPI) controller~\cite{williams2016mppi}
+handles local trajectory tracking. The controller uses a holonomic motion
+model, allowing FRIDA to move laterally when approaching furniture or
+navigating narrow passages. The local and global costmaps combine the lidar
+scan with a spatio-temporal voxel layer built from the RGB-D point cloud,
+which captures obstacles outside the lidar plane and lets stale voxels decay
+over time, so that phantom obstacles are cleared even while the robot is
+stationary.
+\subsubsection{Behavior Tree and Supervision.}
+Nav2's behavior tree coordinates path planning, goal execution and recovery
+behaviors. A custom supervisor monitors the sensor streams and transforms
+required by SLAM and Nav2. If any of them becomes unavailable, it pauses both
+components and resumes them once the required data is restored. The supervisor
+also provides the task manager with a reduced set of navigation services.
 
-\subsubsection{Orchestration and fault handling.}
-\texttt{nav\_central} orchestrates the stack. It manages the Nav2 lifecycle,
-monitors the topics and TF frames the stack depends on, and pauses Nav2 when a
-topic or transform drops, resuming it once they return, instead of letting it
-act on stale data; slam\_toolbox runs as a respawning node and recovers on its
-own. It also exposes the navigation services used by the task manager
-(go to area, dock to table, approach direction, point-to-area lookup), so
-higher layers never touch Nav2 directly.
 
 \section{Conclusions and future work}
 
