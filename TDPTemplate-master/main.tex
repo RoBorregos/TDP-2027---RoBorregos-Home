@@ -95,7 +95,7 @@ C.P. 64849, Monterrey, N.L., Mexico\\[4pt]
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{abstract}
-This paper introduces FRIDA (Friendly Robotic Interactive Domestic Assistant), a General Purpose Service Robot developed for RoboCup@Home 2027. The system employs an architecture that integrates high-level reasoning with robust low-level actuation. The four main contributions are: (1) A clutter-aware placing strategy that optimizes target poses via spatial suitability heatmaps (95\% success rate in object-placement tasks); (2) A multi-stage interpretation pipeline employing schema-aligned parsing to bridge natural language and physical execution; (3) A low-cost, open-source gripper with fractal structure soft fingertips designed for adaptive grasping; and (4) An open-source omnidirectional mecanum base whose microcontroller runs the drive kinematics and odometry fusion, enabling holonomic motion in confined domestic spaces. To support the community, the architecture, core modules and ROS 2 workspaces are open-sourced and available at: https://github.com/RoBorregos/home2.
+This paper introduces FRIDA (Friendly Robotic Interactive Domestic Assistant), a General Purpose Service Robot developed for RoboCup@Home 2027. The system employs an architecture that integrates high-level reasoning with robust low-level actuation. The five main contributions are: (1) A clutter-aware placing strategy that optimizes target poses via spatial suitability heatmaps (95\% success rate in object-placement tasks); (2) A multi-stage interpretation pipeline employing schema-aligned parsing to bridge natural language and physical execution; (3) A low-cost, open-source gripper with fractal structure soft fingertips designed for adaptive grasping; and (4) An open-source omnidirectional mecanum base whose microcontroller runs the drive kinematics and odometry fusion, enabling holonomic motion in confined domestic spaces; and (5) A multi-command scheduler that merges consecutive GPSR commands into a single plan minimizing Nav2 path length (39\% less driving in simulation). To support the community, the architecture, core modules and ROS 2 workspaces are open-sourced and available at: https://github.com/RoBorregos/home2.
 \end{abstract}
 
 
@@ -164,16 +164,16 @@ Similarly, for pouring, PCL \cite{rusu20113d} analyzes the container’s rim hei
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{TDPTemplate-master/images/HeatMaps.png}
+    \includegraphics[width=0.8\textwidth]{TDPTemplate-master/images/HeatMaps_2027.png}
     \caption{Heatmaps for an "in front" of placement request.}
     \label{fig: heatmap}
 \end{figure}
 
-\subsubsection{Experimental Validation.} Robustness was evaluated through 40 trials (20 picking, 20 placing), with randomized configurations of household objects (e.g., an apple surrounded by diverse objects). Results are shown in Table \ref{tab:manipulation_results}.
+\subsubsection{Experimental Validation.} Robustness was evaluated through 40 trials (20 picking, 20 placing), with randomized configurations of household objects (e.g., spoons, apples, soda cans, cereal boxes). Results are shown in Table \ref{tab:manipulation_results}.
 
-\textit{Picking Reliability.} Failures stemmed primarily from motion planning constraints in high density scenarios and dynamic interactions with spherical objects (e.g., orange rolling upon contact).
+\textit{Picking Reliability.} Failures stemmed primarily from slippage on smooth cylindrical objects (e.g., a soda can, twice) and the thin, low-profile geometry of a spoon.
 
-\textit{Placing Reliability.} Heatmap logic effectively directed placement to free space. The single failure resulted from a minor collision with an adjacent object during retraction, though the placed object remained stable.
+\textit{Placing Reliability.} Heatmap logic effectively directed placement to free space, including spatial requests. The single failure resulted from releasing the object at an excessive height, causing it to fall off the table.
 
 \begin{table}[h]
 \centering
@@ -183,7 +183,7 @@ Similarly, for pouring, PCL \cite{rusu20113d} analyzes the container’s rim hei
 \toprule
 \textbf{Task Phase} & \textbf{Successes} & \textbf{Attempts} & \textbf{Success Rate (\%)} \\ 
 \midrule
-Object Picking & 16 & 20 & 80\% \\ 
+Object Picking & 17 & 20 & 85\% \\ 
 Object Placing & 19 & 20 & 95\% \\ 
 \bottomrule
 \end{tabular}
@@ -201,8 +201,12 @@ Object Placing & 19 & 20 & 95\% \\
 \subsection{Computer Vision}
 
 \subsubsection{Face Recognition.}
-
-
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\linewidth]{HeatMaps_2027.pdf}
+    \caption{Enter Caption}
+    \label{fig:placeholder}
+\end{figure}
 \subsubsection{Person Tracking and Re-identification.}
 YOLOv8n with ByteTrack~\cite{bytetrack} tracks the person being followed frame by frame, while a Re-ID module recovers the identity after occlusions. The Re ID network is a Swin Transformer trained on Market1501 with the Person ReID baseline~\cite{joint_reid}, chosen for its discriminative embeddings. While the target is visible, its embeddings are stored at a limited rate in a rolling gallery of up to 128 vectors, which captures appearance changes as the person moves. When the track is lost, each visible person is compared against the gallery by cosine similarity, and the best match. Re ID runs asynchronously in FP16 on the GPU, keeping the tracking loop fast.
 
@@ -217,9 +221,11 @@ For objects announced shortly before a test, we added a path that needs only 15/
 
 \subsection{Human-Robot Interaction (HRI)}
 
+
 \subsubsection{Speech.} The main communication interface with users is through audio. Speech To Text (STT) is performed via an adaptation of the WhisperLive~\cite{whisperlive} implementation using a faster-whisper backend. This enables interpreting a stream of output text and providing feedback or a reaction whilst the user is speaking. Text To Speech (TTS) is also performed live, leveraging the open-weight, fast, and efficient model Kokoro-82M~\cite{hexgrad_2025}. Together, they provide a seamless and time-sensitive user experience. These modules are containerized outside the ROS environment by leveraging lightweight and high-performance gRPC communication contributing to the microservice style architecture.
 
-\subsubsection{Display.} A secondary  user interface is displayed on a screen in the robot's base. It provides insights into FRIDA's processes, allowing users to better understand how and when to interact with it. Some examples include displaying icons prompting users to speak, live STT transcriptions, TTS dialog, detected keywords, vision detections with bounding boxes, and voice activity detection levels.  The web UI is implemented in Next.js which connects to the WebSockets provided by rosbridge.
+\subsubsection{Display.} A secondary user interface is displayed on a screen in the robot's base. It provides insights into FRIDA's processes, allowing users to better understand how and when to interact with it, such as prompts to speak, live STT transcriptions, TTS dialog, detected keywords and vision detections. The
+interface was migrated from a Next.js web app connected through rosbridge to a native PyQt application that subscribes to ROS~2 topics directly, and it now stores the dialog, logs and detection snapshots of each task for later review.
 
 \subsubsection{Command Interpreter.} This pipeline translates natural language into robot-executable tasks. The process is handled by a fine-tuned Llama 3.1 8B model trained on a synthetically generated dataset. It is locally hosted via the Ollama framework on an Nvidia Orin AGX which provides sufficient VRAM.
 
@@ -228,6 +234,7 @@ The dataset is generated through a structured pipeline that begins with a set of
     
 This open source research was published by RoBorregos winning 2nd Best Student Paper at the 24th Mexican International Conference on Artificial Intelligence~\cite{10.1007/978-3-032-09037-9_24}.
 
+\subsubsection{Multi-Command Scheduling.} The GPSR test awards 200 bonus points for receiving several commands at once, so FRIDA merges them into a single plan instead of executing them one after another. Each action plan produced by the Command Interpreter is split into segments that begin with a navigation action, and a Held-Karp dynamic program~\cite{held1962dynamic} searches for the segment order with the shortest total travel. Two constraints keep every order executable: the actions of each command keep their original order, and, since FRIDA carries one object at a time, a segment from another command may only be interleaved between a pick and its delivery if it does not use the gripper. Travel cost is the length of the path Nav2's global planner would follow, so walls and doors are taken into account; all pairwise paths are obtained in a single batched query before planning, with straight-line distance as a fallback. The merged plan runs as a behavior tree with per-action timeouts and retries; if it fails, the remaining commands are executed sequentially, skipping actions already completed. In a simulated apartment, merging four commands reduced driven distance by 39\% and task time by 26\% compared to sequential execution.
 
 \subsection{Navigation}
 
@@ -264,6 +271,7 @@ The contributions to the @Home league include general-purpose modules for percep
 
 \bibliographystyle{unsrt}
 \bibliography{bibliography}
+
 
 
 \newpage
