@@ -75,7 +75,7 @@
 \title{RoBorregos Team Description Paper for\\
 RoboCup@Home 2027}
 
-\author{José Domínguez \and Alejandro González-Escamilla \and Gilberto Malagamba \and Gerardo Fregoso \and Luis Rosales \and Emil Winkler \and Camila Tite \and Fernando Hernandez-Cantu \and Luis Benvenuto \and Erick Ramírez-Cedillo \and Alberto Muñoz \and Carlos Vázquez  }
+\author{Fernando Hernandez-Cantu \and Camila Tite \and Luis Rosales  \and Luis Benvenuto \and Erick Ramírez-Cedillo \and Alberto Muñoz \and Carlos Vázquez  }
 
 \date{
 \today\endgraf\medskip
@@ -95,7 +95,7 @@ C.P. 64849, Monterrey, N.L., Mexico\\[4pt]
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{abstract}
-This paper introduces FRIDA (Friendly Robotic Interactive Domestic Assistant), a General Purpose Service Robot developed for RoboCup@Home 2027. The system employs an architecture that integrates high-level reasoning with robust low-level actuation. The five main contributions are: (1) A clutter-aware placing strategy that optimizes target poses via spatial suitability heatmaps (95\% success rate in object-placement tasks); (2) A multi-stage interpretation pipeline employing schema-aligned parsing to bridge natural language and physical execution; (3) A low-cost, open-source gripper with fractal structure soft fingertips designed for adaptive grasping; and (4) An open-source omnidirectional mecanum base with on-board kinematics and odometry fusion, providing full holonomic mobility; and (5) A multi-command scheduler that merges consecutive GPSR commands into a single plan minimizing Nav2 path length (39\% less driving in simulation). To support the community, the architecture, core modules and ROS 2 workspaces are open-sourced and available at: https://github.com/RoBorregos/home2.
+This paper introduces FRIDA (Friendly Robotic Interactive Domestic Assistant), a General Purpose Service Robot developed for RoboCup@Home 2027. The system employs an architecture that integrates high-level reasoning with robust low-level actuation. The five main contributions are: (1) A clutter-aware placing strategy that optimizes target poses via spatial suitability heatmaps (95\% success rate in object-placement tasks); (2) A multi-stage interpretation pipeline employing schema-aligned parsing to bridge natural language and physical execution; (3) A low-cost, open-source gripper with fractal structure soft fingertips designed for adaptive grasping; (4) An open-source omnidirectional mecanum base with on-board kinematics and odometry fusion, providing full holonomic mobility; and (5) A multi-command scheduler that merges consecutive GPSR commands into a single plan minimizing Nav2 path length (39\% less driving in simulation). To support the community, the architecture, core modules and ROS 2 workspaces are open-sourced and available at: https://github.com/RoBorregos/home2.
 \end{abstract}
 
 
@@ -147,70 +147,64 @@ The system is built on a multi-layered architecture that adheres to modern softw
 
 \subsubsection{Task Planning.} The use of FSMs facilitates logic-driven translation of complex tasks into concrete and robust robotic behaviors. It allows the incorporation of dynamic planning and fault tolerance which enables: receiving feedback for grounding the robot's actions, ease of testing by mocking responses from certain modules, and the incorporation of retry mechanisms in case sub-task functions fail, along with fallback policies involving asking humans for help (Deus ex machina).
 
+
 \subsection{Object Manipulation}
 
-The manipulation pipeline integrates perception, planning, and a custom end-effector to perform robust picking, placing, and pouring tasks.
+\subsubsection{Motion Planning.}
+RRTConnect~\cite{kuffner2000rrt} plans collision-free trajectories for a 6-DoF UFactory xArm6, keeping the end-effector upright while carrying an object to pour. Instead of mesh-based collision checking, RANSAC~\cite{martinez2022ransac} segments the table as an oriented box, the target object is approximated by spheres on its voxel-downsampled point cloud, and the rest of the scene by an OctoMap from the depth camera, which is cleared before each descent to remove stale voxels.
 
-\subsubsection{Motion Planning Strategy.} 
-RRTConnect \cite{kuffner2000rrt} is employed to generate collision-free trajectories, applying path constraints in the configuration space to maintain end-effector orientation (e.g., to prevent spillage). 
-To minimize latency, the planning scene is abstracted: RANSAC \cite{martinez2022ransac} segments the table plane and object clusters, which are then approximated as primitive boxes and bounding spheres. This geometric simplification reduces collision checking from expensive mesh-to-mesh queries to efficient algebraic primitive tests.
+\subsubsection{Picking.}
+GPD-only grasping failed on thin objects such as cutlery, so each object class now maps to one of five strategies with YAML-tuned profiles. General objects use Grasp Pose Detection (GPD)~\cite{ten2017grasp}; for the rest, a geometric estimator computes the pose from the depth inside the 2D detection. \textit{Flat} objects take their yaw from PCA and descend until a joint-effort rise signals contact; \textit{rim} (baskets) and \textit{bowl} descend a fixed distance below the rim to straddle the wall; and \textit{peak} (clothes) targets the highest point of an elevation grid. The mapping is per class, so unseen objects fall back to GPD.
 
+\subsubsection{Placing \& Pouring.}
+Instead of sampling poses, placing scores the whole table with Gaussian kernels that reward free space and penalize nearby objects and edges, multiplied by a directional map for spatial requests (e.g., ``in front of X'', Fig.~\ref{fig:manip}a); only front, back, left, right and ``close to'' are supported. For pouring, PCL~\cite{rusu20113d} esti height, and the object is tilted 15\,cm above it at afixed angle, without feedback on the poured amount.
 
-\subsubsection{Picking.} Target objects are isolated by fusing 2D detections with 3D point clouds using multi-threaded parallel filtering and variable-resolution downsampling to maximize CPU throughput. Grasp Pose Detection (GPD) \cite{ten2017grasp} generates candidate poses within this simplified scene, which are executed by the motion planner.
-
-
-\subsubsection{Placing \& Pouring.} Both tasks require strict constraint handling. For placing, a suitability costmap is generated by fusing a base Gaussian distribution (favoring free space) with a constraint heatmap created by projecting Gaussian fields along relative vectors (e.g., for "place in front of X") (Fig. \ref{fig: heatmap}).
-Similarly, for pouring, PCL \cite{rusu20113d} analyzes the container’s rim height to define a trajectory that strictly respects the orientation constraints defined in the motion planning phase.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.8\textwidth]{TDPTemplate-master/images/HeatMaps_2027.png}
-    \caption{Heatmaps for an "in front" of placement request.}
-    \label{fig: heatmap}
-\end{figure}
-
-\subsubsection{Experimental Validation.} Robustness was evaluated through 40 trials (20 picking, 20 placing), with randomized configurations of household objects (e.g., spoons, apples, soda cans, cereal boxes). Results are shown in Table \ref{tab:manipulation_results}.
-
-\textit{Picking Reliability.} Failures stemmed primarily from slippage on smooth cylindrical objects (e.g., a soda can, twice) and the thin, low-profile geometry of a spoon.
-
-\textit{Placing Reliability.} Heatmap logic effectively directed placement to free space, including spatial requests. The single failure resulted from releasing the object at an excessive height, causing it to fall off the table.
+\subsubsection{Experimental Validation.} %ME ESTAN BLOQUEANDO 
+Each object was picked 10 times on the real robot, with an operator resetting the scene and confirming that the object was retained (Table~\ref{tab:manipulation_results}). The force-guarded strategy addresses the main failure case of our previous GPD-only pipeline, thin cutlery, which GPD could not grasp reliably. Placing succeeded in 19 of 20 trials, including spatial requests; the single failure came from releasing the object too high. Smooth cylindrical objects and pouring remain to be evaluated systematically.
 
 \begin{table}[h]
 \centering
-\caption{Manipulation Success Rates.}
+\caption{Manipulation success rates on the real robot.}
 \label{tab:manipulation_results}
-\begin{tabular}{lccc} 
+\begin{tabular}{llc}
 \toprule
-\textbf{Task Phase} & \textbf{Successes} & \textbf{Attempts} & \textbf{Success Rate (\%)} \\ 
+\textbf{Task} & \textbf{Strategy} & \textbf{Success} \\
 \midrule
-Object Picking & 17 & 20 & 85\% \\ 
-Object Placing & 19 & 20 & 95\% \\ 
+Pick spoon & Force-guarded descent & 8/10 \\
+Pick cereal box & GPD & 9/10 \\
+Place (incl. spatial requests) & Heatmap & 19/20 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsubsection{Custom Gripper.} A low-cost, easy-to-manufacture, open-source\footnotemark\footnotetext{\url{https://grabcad.com/library/robotic-gripper-34}}, custom parallel gripper, powered by a rack-and-pinion mechanism and a high-torque servo, secures objects up to 1 kg. Its novelty lies in fingers incorporating fractal-structured silicone covers \cite{cuan} and soft inner materials, enhancing deformation and adaptability to complex geometries (see Fig. \ref{fig:gripperGraspingPositions}).
+\subsubsection{Custom Gripper.}
+A low-cost, open-source\footnote{\url{https://grabcad.com/library/robotic-gripper-34}} parallel gripper, driven by a rack-and-pinion and a high-torque servo, holds objects up to 1\,kg. Its fingers combine fractal-structured silicone covers~\cite{cuan} with soft inner materials that deform to complex geometries (Fig.~\ref{fig:manip}b).
 
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.7\textwidth]{TDPTemplate-master/images/gripperGraspingPositions.png}
-    \caption{Gripper grasps from different positions.}
-    \label{fig:gripperGraspingPositions}
+\centering
+\begin{minipage}{0.52\textwidth}\centering
+  \includegraphics[width=\linewidth]{TDPTemplate-master/images/HeatMaps_2027.png}\\(a)
+\end{minipage}\hfill
+\begin{minipage}{0.44\textwidth}\centering
+  \includegraphics[width=\linewidth]{TDPTemplate-master/images/gripperGraspingPositions.png}\\(b)
+\end{minipage}
+\caption{(a) Placement heatmaps for an ``in front of'' request. (b) Gripper grasps from different positions.}
+\label{fig:manip}
 \end{figure}
+
 
 \subsection{Computer Vision}
 
 \subsubsection{Person Perception.}
-Faces are detected and encoded with InsightFace's \texttt{buffalo\_sc} (TensorRT, FP16), which replaced dlib for its lower latency, after CLAHE enhancement to reduce sensitivity to lighting, and are matched against the gallery of known guests (Eq.~1). Body pose comes from YOLO11m-pose~\cite{yolo11}, which replaced MediaPipe~\cite{mediapipe} because it estimates keypoints for all people in one pass instead of a single person per crop. Gestures (waving, raising or pointing with either arm) and postures (sitting, standing) are inferred from joint angles. For open-ended attributes such as clothing, Moondream2~\cite{moondream} is queried over gRPC on person crops. Rule-based gestures depend on keypoint visibility, so arms occluded or outside the frame are reported as unknown.
+Faces are detected and encoded with InsightFace's \textit{buffalo\_sc} model, which replaced dlib for its lower latency, to reduce sensitivity to lighting, and their embeedings are matched against the gallery of known guests by cosine similarity. Body pose comes from YOLO11m-pose~\cite{yolo11}, which replaced MediaPipe~\cite{mediapipe} as it estimates keypoints for all people in one pass instead of a single person per crop. Gestures  and postures  are inferred from joint angles; since these rules depend on keypoint visibility, arms that are occluded or outside the frame are reported as unknown. For open-ended attributes such as clothing, Moondream2~\cite{moondream} is queried over gRPC on person crops.
 
 \subsubsection{Person Following.}
-YOLOv8n (TensorRT) with ByteTrack~\cite{bytetrack} tracks the followed person frame by frame. Because ByteTrack relies only on motion, theidentity is lost after occlusions; a Swin Transformer Re-ID model trained on Market-1501~\cite{joint_reid} recovers it. While the target is visible, an embedding is stored every 0.3\,s in a rolling gallery of up to 128 vectors; when the track is lost, visible people are matchedagainst this gallery (Eq.~1, $\tau=0.6$) to re-acquire the target. Re-ID runs asynchronously so the tracking loop is never blocked. People with similar clothing remain the main failure case.
+YOLOv8n (TensorRT) with ByteTrack~\cite{bytetrack} tracks the followed person frame by frame. Because ByteTrack relies only on motion, the identity is lost after occlusions; a Swin Transformer Re-ID model trained on Market-1501~\cite{joint_reid} recovers it. While the target is visible, an embedding is stored every 0.3\,s in a rolling gallery of up to 128 vectors; when the track is lost, visible people are matched against this gallery in the same way, and the best match above 0.6 is re-acquired as the target. Re-ID runs asynchronously so the tracking loop is never blocked. People with similar clothing remain the main failure case.
 
 \subsubsection{Object Recognition.}
-A self-hosted web pipeline\footnote{\url{https://github.com/RoBorregos/home-pipelines}} replaces manual labeling: from a 20-second phone video per object, GroundingDINO~\cite{grounding_dino} localizes the object by class name, SAM3~\cite{sam3} refines its mask, and the crops arecomposited onto real backgrounds to train YOLO on two NVIDIA A6000 GPUs. At RoboCup 2026, one member recorded, trained and deployed a 30-class detector in 5 hours, reaching 97.76\% mAP@0.5:0.95 on validation. For objects announced shortly before a test, a path without retraining uses15--20 photos per class: YOLOE~\cite{yoloe} proposes class-agnostic boxes and DINOv2~\cite{dinov2} embeddings are matched against the per-class gallery (Eq.~1), reaching 92.2\% proposal recall and 80.6\% gated recall@1, lower than the supervised detector but available within minutes.
+A self-hosted web pipeline\footnote{\url{https://github.com/RoBorregos/home-pipelines}} replaces manual labeling: from a 20-second phone video per object, GroundingDINO~\cite{grounding_dino} localizes the object by class name, SAM3~\cite{sam3} refines its mask, and the crops are composited onto real backgrounds to train YOLO on two NVIDIA A6000 GPUs. At RoboCup 2026, we recorded, trained and deployed a 30-class detector in 5 hours with a single operator, reaching 97.76\% mAP@0.5:0.95 on validation. For objects announced shortly before a test, a path without retraining uses 10--30 photos per class to embed and store; in runtime, YOLOE~\cite{yoloe} proposes class-agnostic boxes and DINOv2~\cite{dinov2} embeddings are matched against the per-class gallery, reaching 92.2\% proposal recall and 80.6\% gated recall@1, lower than the supervised detector but available within minutes.
 
 \subsection{Human-Robot Interaction (HRI)}
-
 
 \subsubsection{Speech.} The main communication interface with users is through audio. Speech To Text (STT) is performed via an adaptation of the WhisperLive~\cite{whisperlive} implementation using a faster-whisper backend. This enables interpreting a stream of output text and providing feedback or a reaction whilst the user is speaking. Text To Speech (TTS) is also performed live, leveraging the open-weight, fast, and efficient model Kokoro-82M~\cite{hexgrad_2025}. Together, they provide a seamless and time-sensitive user experience. These modules are containerized outside the ROS environment by leveraging lightweight and high-performance gRPC communication contributing to the microservice style architecture.
 
