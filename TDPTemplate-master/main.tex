@@ -133,13 +133,6 @@ FRIDA's software runs on ROS~2 Jazzy and is split into four modules (vision, HRI
 
 This section details development highlights and achievements per area.
 
-\subsection{Integration}
-The system is built on a multi-layered architecture that adheres to modern software engineering standards. It employs a Hardware Abstraction Layer (HAL) to decouple high-level logic from specific device drivers, while enforcing strict module isolation to prevent cascading failures. This framework is supported by structured version control and containerized CI/CD pipelines, ensuring automated testing and reproducible deployments.
-
-\subsubsection{Software Architecture.} Task-specific deterministic Finite State Machines (FSM) orchestrate the high-level logic; sub-task coordinators provide abstracted functions for calling nodes at module-level; at the lowest level, modules interact with the hardware and execute primitive actions.
-
-\subsubsection{Task Planning.} The use of FSMs facilitates logic-driven translation of complex tasks into concrete and robust robotic behaviors. It allows the incorporation of dynamic planning and fault tolerance which enables: receiving feedback for grounding the robot's actions, ease of testing by mocking responses from certain modules, and the incorporation of retry mechanisms in case sub-task functions fail, along with fallback policies involving asking humans for help (Deus ex machina).
-
 
 \subsection{Object Manipulation}
 
