@@ -75,7 +75,7 @@
 \title{RoBorregos Team Description Paper for\\
 RoboCup@Home 2027}
 
-\author{Fernando Hernandez-Cantu \and Camila Tite \and Luis Rosales  \and Luis Benvenuto \and Erick Ramírez-Cedillo \and Alberto Muñoz \and Carlos Vázquez  }
+\author{Fernando Hernandez-Cantu \and Camila Tite\and Luis Rosales  \and Luis Benvenuto \and Erick Ramírez-Cedillo \and Alberto Muñoz \and Carlos Vázquez  }
 
 \date{
 \today\endgraf\medskip
@@ -126,15 +126,8 @@ The FRIDA project philosophy is focused on bridging the gap between semantic rea
 
 \end{enumerate}
 
-\section{Robot architecture}
-
-FRIDA operates on a distributed architecture built using ROS 2 Jazzy for communication between modules. The system is designed around a centralized task orchestrator that coordinates asynchronous independent sub-systems.
-
-\subsection{Containerized Deployment}
-The software stack is containerized using Docker to facilitate seamless multi-platform deployment on both embedded NVIDIA Jetson edge devices and standard desktop workstations. By automating environment detection and isolating complex dependencies, this architecture ensures reproducibility and lowers the barrier to entry for the open-source community, allowing researchers to deploy the system without hardware-specific configuration overhead.
-
-\subsection{Modular Design and Standardized Communication}
-The system is partitioned into four modules: Vision, HRI, Manipulation, and Navigation. By leveraging standardized ROS 2 interfaces, the underlying logic of each area is abstracted, allowing for a clear separation of concerns and a microservice-style architecture.
+\section{Robot Architecture}
+FRIDA's software runs on ROS~2 Jazzy and is split into four modules (vision, HRI, manipulation and navigation), each in its own Docker container. A launcher detects whether it runs on a Jetson, a CUDA workstation or a CPU-only machine and starts the matching images, which CI builds on every push and pull request and publishes to Docker Hub. Modules communicate over CycloneDDS; speech, TTS and the LLM servers run outside ROS and are reached over gRPC or HTTP. Each task is coordinated by a task manager: most are finite state machines, while GPSR executes behavior trees built at run time from the interpreted commands. Task managers reach the modules only through subtask managers that wrap each module's ROS~2 interfaces. Every call waits for its service with a timeout and returns a status code instead of raising, so an unavailable module becomes a failure the task can handle (retry, skip or continue) rather than a crash; the same layer lets any module be mocked in tests.
 
 \section{Scientific contributions and current work}
 
@@ -151,13 +144,16 @@ The system is built on a multi-layered architecture that adheres to modern softw
 \subsection{Object Manipulation}
 
 \subsubsection{Motion Planning.}
-RRTConnect~\cite{kuffner2000rrt} plans collision-free trajectories for a 6-DoF UFactory xArm6, keeping the end-effector upright while carrying an object to pour. Instead of mesh-based collision checking, RANSAC~\cite{martinez2022ransac} segments the table as an oriented box, the target object is approximated by spheres on its voxel-downsampled point cloud, and the rest of the scene by an OctoMap from the depth camera, which is cleared before each descent to remove stale voxels.
+RRTConnect~\cite{kuffner2000rrt} plans collision-free trajectories, keeping the end-effector upright while carrying an object to pour. To reduce collision-checking time, the planning scene uses simple primitives: RANSAC~\cite{martinez2022ransac} segments the table as an oriented box, and the target object is approximated by spheres fitted to its voxel-downsampled point cloud. The rest of the scene comes from an OctoMap built from the depth camera.
 
 \subsubsection{Picking.}
-GPD-only grasping failed on thin objects such as cutlery, so each object class now maps to one of five strategies with YAML-tuned profiles. General objects use Grasp Pose Detection (GPD)~\cite{ten2017grasp}; for the rest, a geometric estimator computes the pose from the depth inside the 2D detection. \textit{Flat} objects take their yaw from PCA and descend until a joint-effort rise signals contact; \textit{rim} (baskets) and \textit{bowl} descend a fixed distance below the rim to straddle the wall; and \textit{peak} (clothes) targets the highest point of an elevation grid. The mapping is per class, so unseen objects fall back to GPD.
+Target objects are isolated by fusing 2D detections with 3D point
+clouds using multi-threaded parallel filtering and variable-resolution downsampling to maximize CPU throughput. Grasp Pose Detection (GPD)~\cite{ten2017grasp}; generates
+candidate poses within this simplified scene, which are executed by the motion
+planner.
 
 \subsubsection{Placing \& Pouring.}
-Instead of sampling poses, placing scores the whole table with Gaussian kernels that reward free space and penalize nearby objects and edges, multiplied by a directional map for spatial requests (e.g., ``in front of X'', Fig.~\ref{fig:manip}a); only front, back, left, right and ``close to'' are supported. For pouring, PCL~\cite{rusu20113d} esti height, and the object is tilted 15\,cm above it at afixed angle, without feedback on the poured amount.
+Placing scores the whole table with Gaussian kernels that reward free space and penalize nearby objects and edges, multiplied by a directional map for spatial requests (e.g., ``in front of X'', Fig.~\ref{fig:manip}a); only front, back, left, right and ``close to'' are supported. For pouring, PCL~\cite{rusu20113d} estimates the container's rim height, and the object is tilted 15\,cm above it at a fixed angle, without feedback on the poured amount.
 
 \subsubsection{Experimental Validation.} %ME ESTAN BLOQUEANDO 
 Each object was picked 10 times on the real robot, with an operator resetting the scene and confirming that the object was retained (Table~\ref{tab:manipulation_results}). The force-guarded strategy addresses the main failure case of our previous GPD-only pipeline, thin cutlery, which GPD could not grasp reliably. Placing succeeded in 19 of 20 trials, including spatial requests; the single failure came from releasing the object too high. Smooth cylindrical objects and pouring remain to be evaluated systematically.
@@ -196,13 +192,13 @@ A low-cost, open-source\footnote{\url{https://grabcad.com/library/robotic-grippe
 \subsection{Computer Vision}
 
 \subsubsection{Person Perception.}
-Faces are detected and encoded with InsightFace's \textit{buffalo\_sc} model, which replaced dlib for its lower latency, to reduce sensitivity to lighting, and their embeedings are matched against the gallery of known guests by cosine similarity. Body pose comes from YOLO11m-pose~\cite{yolo11}, which replaced MediaPipe~\cite{mediapipe} as it estimates keypoints for all people in one pass instead of a single person per crop. Gestures  and postures  are inferred from joint angles; since these rules depend on keypoint visibility, arms that are occluded or outside the frame are reported as unknown. For open-ended attributes such as clothing, Moondream2~\cite{moondream} is queried over gRPC on person crops.
+Faces are detected and encoded with InsightFace, and their embeddings are matched against the gallery of known guests by cosine similarity. Body pose comes from YOLO11-pose~\cite{yolo11}, which estimates keypoints for all people in one pass. Gestures and postures are inferred from joint angles; arms that are occluded or outside the frame are reported as unknown. For open-ended attributes such as clothing, Moondream2~\cite{moondream} is queried on person crops.
 
 \subsubsection{Person Following.}
-YOLOv8n (TensorRT) with ByteTrack~\cite{bytetrack} tracks the followed person frame by frame. Because ByteTrack relies only on motion, the identity is lost after occlusions; a Swin Transformer Re-ID model trained on Market-1501~\cite{joint_reid} recovers it. While the target is visible, an embedding is stored every 0.3\,s in a rolling gallery of up to 128 vectors; when the track is lost, visible people are matched against this gallery in the same way, and the best match above 0.6 is re-acquired as the target. Re-ID runs asynchronously so the tracking loop is never blocked. People with similar clothing remain the main failure case.
+YOLOv8 with ByteTrack~\cite{bytetrack} tracks the followed person frame by frame. Because ByteTrack uses no appearance information, the identity is lost after occlusions, so a Swin Transformer Re-ID model trained on Market-1501~\cite{joint_reid} recovers it. While the target is visible, an embedding is stored every 0.3,s in a rolling gallery of up to 128 vectors; when the track is lost, visible people are matched against this gallery by cosine similarity, and the best match above 0.6 is re-acquired as the target. Re-ID runs asynchronously so it never blocks the tracking loop. People with similar clothing remain the main failure case.
 
 \subsubsection{Object Recognition.}
-A self-hosted web pipeline\footnote{\url{https://github.com/RoBorregos/home-pipelines}} replaces manual labeling: from a 20-second phone video per object, GroundingDINO~\cite{grounding_dino} localizes the object by class name, SAM3~\cite{sam3} refines its mask, and the crops are composited onto real backgrounds to train YOLO on two NVIDIA A6000 GPUs. At RoboCup 2026, we recorded, trained and deployed a 30-class detector in 5 hours with a single operator, reaching 97.76\% mAP@0.5:0.95 on validation. For objects announced shortly before a test, a path without retraining uses 10--30 photos per class to embed and store; in runtime, YOLOE~\cite{yoloe} proposes class-agnostic boxes and DINOv2~\cite{dinov2} embeddings are matched against the per-class gallery, reaching 92.2\% proposal recall and 80.6\% gated recall@1, lower than the supervised detector but available within minutes.
+A self-hosted web pipeline\footnote{\url{https://github.com/RoBorregos/home-pipelines}} replaces manual labeling: from a 20-second phone video per object, GroundingDINO~\cite{grounding_dino} localizes the object by class name, SAM3~\cite{sam3} refines its mask, and the crops are composited onto real backgrounds to train YOLO on two NVIDIA A6000 GPUs. At RoboCup 2026, we recorded, trained and deployed a 30-class detector in 5 hours with a single operator, reaching 97.76\% mAP@0.5:0.95 on validation. For objects announced shortly before a test, a path without retraining uses 20 photos per class to embed and store; in runtime, YOLOE~\cite{yoloe} proposes class-agnostic boxes and DINOv2~\cite{dinov2} embeddings are matched against the per-class gallery, reaching 92.2\% proposal recall and 80.6\% gated recall@1, lower than the supervised detector but available within minutes.
 
 \subsection{Human-Robot Interaction (HRI)}
 
