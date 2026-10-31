@@ -51,7 +51,7 @@
 \usepackage{fancyhdr}
 \usepackage{graphicx}
 \usepackage{tikz}
-\usetikzlibrary{positioning}
+\usetikzlibrary{positioning, calc}
 \usepackage{lastpage}
 \usepackage[all]{nowidow}
 \usepackage[inline]{enumitem}
@@ -75,7 +75,7 @@
 \title{RoBorregos Team Description Paper for\\
 RoboCup@Home 2027}
 
-\author{Fernando Hernandez-Cantu \and Camila Tite\and Luis Rosales  \and Luis Benvenuto \and Erick Ramírez-Cedillo \and Alberto Muñoz \and Carlos Vázquez  }
+\author{Fernando Hernandez-Cantu \and Camila Tite \and Luis Benvenuto \and Luis Rosales \and Erick Ramírez-Cedillo \and Alberto Muñoz \and Carlos Vázquez  }
 
 \date{
 \today\endgraf\medskip
@@ -107,9 +107,7 @@ This paper introduces FRIDA (Friendly Robotic Interactive Domestic Assistant), a
 \fancyhead[R]{\small RoBorregos Team Description Paper for RoboCup@Home OPL 2027}
 
 \section{Introduction}
-RoBorregos is the representative team of Tecnológico de Monterrey, Mexico dedicated to participating in autonomous robotics competitions since 2015. Composed exclusively of undergraduate students, the team focuses on the development and dissemination of open-source robotic technologies aimed at advancing robotics research and education in Mexico. Development for the @Home league began in 2019, debuting in Mexico's @Home Beginners category in 2021 and advancing to Open Platform League in 2023 with FRIDA (Friendly Robotic Interactive Domestic Assistant). RoBorregos entered the international stage, achieving 16th place at RoboCup 2024, 6th place in 2025, and 9th place in 2026, and won 1st place at the Mexican Open 2026. Consistent with the RoboCup philosophy, RoBorregos actively contributes to the open-source community. Beyond software, we prioritize knowledge transfer: our complete source code, hardware designs, and development documentation including meeting logs and architectural decision records are publicly available. This transparency facilitates reproducibility and allows other teams to understand the rationale behind our design choices.
-
-In addition, RoBorregos has strengthened its academic footprint through collaboration with School of Engineering and Sciences at Tecnológico de Monterrey, formalized through undergraduate research projects and peer-reviewed publications available free in our documentation webpage\footnotemark\footnotetext{\url{https://athome.roborregos.com/}}. This paper outlines the team's ongoing efforts towards a robust system capable of executing complex mobile manipulation and human-interaction tasks, such as serving guests and storing groceries, under the uncertainty of real-world environments.
+RoBorregos is the undergraduate robotics team of Tecnológico de Monterrey, Mexico, competing in the @Home OPL since 2023 (9th at RoboCup 2026). Its robot, FRIDA (Friendly Robotic Interactive Domestic Assistant), is a domestic service robot with one arm and an omnidirectional base; a photo and its hardware are given in the annex (Fig.~\ref{fig:frida}). This paper describes the current system, with emphasis on the work done since our 2026 team description paper. The team, documentation and development logs are available on our website.\footnote{\url{https://athome.roborregos.com/}}
 
 \section{Research focus and interests}
 The FRIDA project philosophy is focused on bridging the gap between semantic reasoning and reliable actuation in unstructured domestic environments. Driven by this goal, our research for the 2027 cycle targets specific bottlenecks in service robotics to provide reproducible contributions to the community. This year, we report significant progress in:
@@ -126,13 +124,47 @@ The FRIDA project philosophy is focused on bridging the gap between semantic rea
 
 \end{enumerate}
 
+% \section{Robot Architecture}
+% FRIDA's software runs on ROS~2 Jazzy and is split into four modules (vision, HRI, manipulation and navigation), each in its own Docker container. A launcher detects whether it runs on a Jetson, a CUDA workstation or a CPU-only machine and starts the matching images, which CI builds on every push and pull request and publishes to Docker Hub. Modules communicate over CycloneDDS; speech, TTS and the LLM servers run outside ROS and are reached over gRPC or HTTP. Each task is coordinated by a task manager: most are finite state machines, while GPSR executes behavior trees built at run time from the interpreted commands. Task managers reach the modules only through subtask managers that wrap each module's ROS~2 interfaces. Every call waits for its service with a timeout and returns a status code instead of raising, so an unavailable module becomes a failure the task can handle (retry, skip or continue) rather than a crash; the same layer lets any module be mocked in tests.
 \section{Robot Architecture}
-FRIDA's software runs on ROS~2 Jazzy and is split into four modules (vision, HRI, manipulation and navigation), each in its own Docker container. A launcher detects whether it runs on a Jetson, a CUDA workstation or a CPU-only machine and starts the matching images, which CI builds on every push and pull request and publishes to Docker Hub. Modules communicate over CycloneDDS; speech, TTS and the LLM servers run outside ROS and are reached over gRPC or HTTP. Each task is coordinated by a task manager: most are finite state machines, while GPSR executes behavior trees built at run time from the interpreted commands. Task managers reach the modules only through subtask managers that wrap each module's ROS~2 interfaces. Every call waits for its service with a timeout and returns a status code instead of raising, so an unavailable module becomes a failure the task can handle (retry, skip or continue) rather than a crash; the same layer lets any module be mocked in tests.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\scriptsize, node distance=3mm and 2mm,
+  box/.style={draw, rounded corners=1pt, minimum height=5mm, align=center, inner sep=2pt},
+  mod/.style={box, minimum width=20mm, fill=gray!10}]
+\node[box, minimum width=86mm, fill=gray!25] (tm) {Task managers: FSM per task \;---\; GPSR: behavior tree built at run time};
+\node[box, minimum width=86mm, below=of tm] (sm) {Subtask managers: timeout-guarded, status codes, \texttt{@mockable}};
+\node[mod, below=of sm, xshift=-33mm] (vis) {Vision};
+\node[mod, right=of vis] (hri) {HRI};
+\node[mod, right=of hri] (man) {Manipulation};
+\node[mod, right=of man] (nav) {Navigation};
+\node[box, below=of $(vis.south)!0.5!(hri.south)$, minimum width=40mm, text width=38mm, dashed] (grpc) {STT, TTS, LLM servers\\(gRPC / HTTP, outside ROS)};
+\node[box, below=of $(man.south)!0.5!(nav.south)$, minimum width=40mm, text width=38mm] (hw) {Drivers: arm, gripper,\\cameras, LiDARs, base};
+\draw[->] (tm) -- (sm);
+\foreach \m in {vis,hri,man,nav} \draw[->] (sm.south -| \m.north) -- (\m.north);
+\draw[->] (hri) -- (grpc.north -| hri.south);
+\draw[->] (man.south) -- (hw.north -| man.south);
+\draw[->] (nav.south) -- (hw.north -| nav.south);
+\end{tikzpicture}
+\caption{Software architecture. Each module runs in its own container and communicates over CycloneDDS with shared memory.}
+\label{fig:arch}
+\end{figure}
+
+FRIDA's software runs on ROS~2 Jazzy (JetPack~7 on an NVIDIA Jetson AGX Orin) and is split into four modules (vision, HRI, manipulation and navigation), each packaged in its own Docker container (Fig.~\ref{fig:arch}).
+
+\subsubsection{Deployment.} A single launcher detects whether it runs on a Jetson, a CUDA workstation or a CPU-only machine and starts the matching images, so the same commands run on the robot and on development laptops. Containers are pinned to disjoint CPU sets (navigation on cores 0--3, perception and planning on 4--11) so that heavy perception workloads cannot starve the navigation control loop.
+
+\subsubsection{Communication.} Modules communicate over CycloneDDS; on the robot, shared-memory transport avoids copying camera images and point clouds between containers. Speech, TTS and LLM servers run outside ROS and are reached over gRPC or HTTP, keeping their Python and CUDA dependencies isolated from the ROS images.
+
+\subsubsection{Task execution.} Each task is coordinated by a task manager: structured tests use finite state machines, while GPSR executes behavior trees built at run time from the interpreted commands (Sec.~\ref{sec:scheduling}). Task managers reach the modules only through subtask managers that wrap each module's ROS~2 interfaces. Every call waits for its service with a timeout and returns a status code instead of raising, so an unavailable module becomes a failure the task can handle (retry, skip or continue) rather than a crash.
+
+% \subsubsection{Testing.} Every subtask function is declared mockable, and an automated test enforces it, so any module can be replaced by mocks to test a task manager without the robot. CI builds the ROS~2 workspace on every push and pull request, and rebuilds and publishes the images to Docker Hub whenever their Dockerfiles change.
+
 
 \section{Scientific contributions and current work}
 
 This section details development highlights and achievements per area.
-
 
 \subsection{Object Manipulation}
 
@@ -184,7 +216,7 @@ A low-cost, open-source\footnote{\url{https://grabcad.com/library/robotic-grippe
 
 \subsection{Computer Vision}
 
-\subsubsection{Person Perception.}
+\subsubsection{Person Perceptio n.}
 Faces are detected and encoded with InsightFace, and their embeddings are matched against the gallery of known guests by cosine similarity. Body pose comes from YOLO11-pose~\cite{yolo11}, which estimates keypoints for all people in one pass. Gestures and postures are inferred from joint angles; arms that are occluded or outside the frame are reported as unknown. For open-ended attributes such as clothing, Moondream2~\cite{moondream} is queried on person crops.
 
 \subsubsection{Person Following.}
@@ -207,13 +239,13 @@ The dataset is generated through a structured pipeline that begins with a set of
     
 This open source research was published by RoBorregos winning 2nd Best Student Paper at the 24th Mexican International Conference on Artificial Intelligence~\cite{10.1007/978-3-032-09037-9_24}.
 
-\subsubsection{Multi-Command Scheduling.} The GPSR test awards 200 bonus points for receiving several commands at once, so FRIDA merges them into a single plan instead of executing them one after another. Each action plan produced by the Command Interpreter is split into segments that begin with a navigation action, and a Held-Karp dynamic program~\cite{held1962dynamic} searches for the segment order with the shortest total travel. Two constraints keep every order executable: the actions of each command keep their original order, and, since FRIDA carries one object at a time, a segment from another command may only be interleaved between a pick and its delivery if it does not use the gripper. Travel cost is the length of the path Nav2's global planner would follow, so walls and doors are taken into account; all pairwise paths are obtained in a single batched query before planning, with straight-line distance as a fallback. The merged plan runs as a behavior tree with per-action timeouts and retries; if it fails, the remaining commands are executed sequentially, skipping actions already completed. In a simulated apartment, merging four commands reduced driven distance by 39\% and task time by 26\% compared to sequential execution.
+\subsubsection{Multi-Command Scheduling.}\label{sec:scheduling} The GPSR test awards 200 bonus points for receiving several commands at once, so FRIDA merges them into a single plan instead of executing them one after another. Each action plan produced by the Command Interpreter is split into segments that begin with a navigation action, and a Held-Karp dynamic program~\cite{held1962dynamic} searches for the segment order with the shortest total travel. Two constraints keep every order executable: the actions of each command keep their original order, and, since FRIDA carries one object at a time, a segment from another command may only be interleaved between a pick and its delivery if it does not use the gripper. Travel cost is the length of the path Nav2's global planner would follow, so walls and doors are taken into account; all pairwise paths are obtained in a single batched query before planning, with straight-line distance as a fallback. The merged plan runs as a behavior tree with per-action timeouts and retries; if it fails, the remaining commands are executed sequentially, skipping actions already completed. In a simulated apartment, merging four commands reduced driven distance by 39\% and task time by 26\% compared to sequential execution.
+
 
 \subsection{Navigation}
 
 \subsubsection{Stack overview.}
-FRIDA's navigation is built on the ROS~2 Navigation Stack
-Nav2~\cite{macenski2020marathon2} and runs inside a single Docker container.
+FRIDA's navigation is built on Nav2~\cite{macenski2020marathon2}.
 SLAM Toolbox~\cite{macenski2021slamtoolbox} builds 2D maps of the arena from
 the combined scan of the two RPLIDAR~C1 sensors, using graph-based SLAM with
 loop closure, and is then run in localization mode on the saved map. Wheel and
