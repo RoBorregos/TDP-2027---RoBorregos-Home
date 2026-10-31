@@ -25,7 +25,7 @@
 \label{fig:arch}
 \end{figure}
 
-FRIDA's software runs on ROS~2 Jazzy (JetPack~7 on an NVIDIA Jetson AGX Orin) and is split into four modules (vision, HRI, manipulation and navigation), each packaged in its own Docker container (Fig.~\ref{fig:arch}).
+FRIDA's software runs on ROS~2 Jazzy (JetPack~7 on two NVIDIA Jetson AGX Orin) and is split into four modules (vision, HRI, manipulation and navigation), each packaged in its own Docker container (Fig.~\ref{fig:arch}).
 
 \subsubsection{Deployment.} A single launcher detects whether it runs on a Jetson, a CUDA workstation or a CPU-only machine and starts the matching images, so the same commands run on the robot and on development laptops. Containers are pinned to disjoint CPU sets (navigation on cores 0--3, perception and planning on 4--11) so that heavy perception workloads cannot starve the navigation control loop.
 
