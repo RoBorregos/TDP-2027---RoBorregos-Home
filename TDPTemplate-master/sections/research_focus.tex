@@ -1,3 +1,14 @@
-\begin{abstract}
-This paper describes FRIDA (Friendly Robotic Interactive Domestic Assistant), the RoboCup@Home Open Platform League robot of team RoBorregos, and the work done since our 2026 team description paper. The main contributions are: (1) an open-source omnidirectional mecanum base that replaces the differential-drive base used until 2026, driven by a holonomic MPPI controller in Nav2; (2) a multi-command scheduler that merges several GPSR commands into one plan with a Held-Karp search constrained by command order and by carrying one object at a time, reducing driven distance by 39\% in simulation; and (3) a geometric grasp generator that fits a box, cylinder or sphere to each object and ranks collision-free approaches, with GPD as a fallback. The paper also summarizes placing with spatial suitability heatmaps, the fine-tuned LLM command interpreter published at MICAI 2025, and the object-recognition pipeline used to train a 30-class detector in 5 hours at RoboCup 2026. Code and hardware designs are open source at \url{https://github.com/RoBorregos}.
-\end{abstract}
+\section{Research focus and interests}
+The FRIDA project philosophy is focused on bridging the gap between semantic reasoning and reliable actuation in unstructured domestic environments. Driven by this goal, our research for the 2027 cycle targets specific bottlenecks in service robotics to provide reproducible contributions to the community. This year, we report significant progress in:
+\begin{enumerate}
+
+\item Context-Aware Manipulation: Fused environmental heatmaps with task constraints to generate optimal object-placing poses, ensuring collision-free trajectories in high-density clutter.
+
+\item Reliable Neuro-Symbolic Grounding: Developed a synthetic dataset pipeline to fine-tune LLMs for reliable instruction grounding, a contribution recently published in MICAI \cite{10.1007/978-3-032-09037-9_24}.
+
+\item Segmentation Dataset Pipeline: Upgraded semi-automatic data generation from bounding boxes to instance segmentation masks for cleaner annotations and more robust training.
+
+
+\item Holonomic Mobility: Replaced the differential-drive Dashgo B1 with a custom open-source mecanum base that runs its kinematics and EKF odometry.
+
+\end{enumerate}
