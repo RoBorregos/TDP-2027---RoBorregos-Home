@@ -26,18 +26,16 @@
 \begin{figure}[H]
 \begin{minipage}[c]{0.64\textwidth}
 \begin{itemize}
-	\item Platform: ROS 2, Jazzy distribution.
-    \item Integration: Docker
-	\item Navigation: ROS 2 Navigation Stack (Nav2), slam\_toolbox
-	\item Person analysis: Torch, InsightFace, YOLO11-pose, MediaPipe, ByteTrack, Moondream2
-	\item Speech recognition: WhisperLive with faster-whisper
-    \item Keyword spotting: Open Wake Word
-	\item Text processing: Llama 3.2, sentence-transformers/ all-MiniLM-L6-v2
-    \item Text To Speech: Kokoro-82M
-	\item Object detection: GroundingDINO, SAM 3, YOLO11, YOLOE, DINOv2
-    \item Manipulation planning: MoveIt 2, GPD
-    \item Point cloud processing: PCL, RANSAC
+        \item Platform: ROS~2 Jazzy, Docker, CycloneDDS; task and subtask managers*, GPSR multi-command scheduler*.
+        \item Navigation: Nav2, SLAM Toolbox, MPPI; semantic patrol planner*, navigation supervisor*, base firmware*.
+        \item Person analysis: InsightFace, YOLO11-pose, MediaPipe, ByteTrack, Moondream2.
+        \item Object detection: GroundingDINO, SAM~3, YOLO11, YOLOE, DINOv2; object dataset pipeline*.
+        \item Speech: WhisperLive with faster-whisper, DeepFilterNet3, openWakeWord, Kokoro-82M.
+        \item Language: llama.cpp, Qwen3.5-4B, BAML, all-MiniLM-L6-v2; fine-tuned command interpreter*.
+        \item Manipulation: MoveIt~2, GPD, PCL; geometric grasp generator*, placing heatmaps*.
+        \item Interface: PyQt display*.
 \end{itemize}
+\textit{* Developed by the team.}
 \end{minipage}\hfill
 \begin{minipage}[c]{0.33\textwidth}
 	\centering
