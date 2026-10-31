@@ -1,0 +1,25 @@
+\subsection{Navigation}
+
+\subsubsection{Stack overview.}
+FRIDA's navigation is built on Nav2~\cite{macenski2020marathon2}.
+SLAM Toolbox~\cite{macenski2021slamtoolbox} builds 2D maps of the arena from
+the combined scan of the two RPLIDAR~C1 sensors, using graph-based SLAM with
+loop closure, and is then run in localization mode on the saved map. Wheel and
+inertial odometry are fused by an EKF on the base controller
+and provide the motion estimate for localization.
+\subsubsection{Planning and Control.}
+Global paths are computed with Nav2's NavFn planner using A* search, while a
+Model Predictive Path Integral (MPPI) controller~\cite{williams2016mppi}
+handles local trajectory tracking. The controller uses a holonomic motion
+model, allowing FRIDA to move laterally when approaching furniture or
+navigating narrow passages. The local and global costmaps combine the lidar
+scan with a spatio-temporal voxel layer built from the RGB-D point cloud,
+which captures obstacles outside the lidar plane and lets stale voxels decay
+over time, so that phantom obstacles are cleared even while the robot is
+stationary.
+\subsubsection{Behavior Tree and Supervision.}
+Nav2's behavior tree coordinates path planning, goal execution and recovery
+behaviors. A custom supervisor monitors the sensor streams and transforms
+required by SLAM and Nav2. If any of them becomes unavailable, it pauses both
+components and resumes them once the required data is restored. The supervisor
+also provides the task manager with a reduced set of navigation services.

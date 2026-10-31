@@ -1,0 +1,12 @@
+\subsection{Omnidirectional Base}\label{sec:omnibase}
+Until 2026 FRIDA used a differential-drive Dashgo B1, which cannot move sideways: aligning with a table or shelf took several turn-and-drive corrections before every pick or place. This year the team built its own holonomic base, released as open source\footnote{\url{https://github.com/RoBorregos/home-custom-base}}. Mecanum wheels were chosen over omni wheels because they carry the robot and the arm's moving load with less vibration, at the cost of roller slip when rotating, which the state estimator has to compensate.
+
+\subsubsection{State estimation on the microcontroller.} An STM32H755 computes the mecanum inverse kinematics~\cite{taheri2015kinematic} and runs a six-state EKF~\cite{thrun2005probabilistic} ($x, y, \psi, v_x, v_y, \omega$) at 50\,Hz. Because the rollers slip during rotation, heading is taken from the IMU and the wheel-derived yaw rate is heavily down-weighted. Running the filter on the MCU gives a single odometry source from power-up that survives restarts of the ROS~2 stack. The same MCU stops the motors if no command arrives for 500\,ms, on a hardware emergency stop, or after a CAN bus fault, from which it recovers without rebooting. % TODO: add one measurement, e.g. final pose error after a closed loop with EKF+IMU vs. wheel-only odometry (firmware switch EKF_TRUST_IMU).
+
+% Diagram left out to stay within 8 pages; re-enable if space allows.
+% \begin{figure}[tb]
+%   \centering
+%   \resizebox{0.85\textwidth}{!}{\input{TDPTemplate-master/omnibase_diagram}}
+%   \caption{Control architecture of the omnidirectional base.}
+%   \label{fig:omnibase}
+% \end{figure}
