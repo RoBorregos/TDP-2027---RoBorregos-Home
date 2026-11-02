@@ -1,7 +1,7 @@
 \subsection{Computer Vision}
 
 \subsubsection{Person Perception.}
-Faces are detected and encoded with InsightFace~\cite{arcface}, and their embeddings are matched against the gallery of known guests by cosine similarity.. Body pose comes from YOLO11-pose, which estimates keypoints for all people in one pass. Gestures and postures are inferred from joint angles; arms that are occluded or outside the frame are reported as unknown. For open-ended attributes such as clothing, Moondream2 is queried on person crops.
+Faces are detected and encoded with InsightFace~\cite{arcface}, and their embeddings are matched against the gallery of known guests by cosine similarity. Body pose comes from YOLO11-pose, which estimates keypoints for all people in one pass. Gestures and postures are inferred from joint angles; arms that are occluded or outside the frame are reported as unknown. For open-ended attributes such as clothing, Moondream2 is queried on person crops.
 
 \subsubsection{Person Following.}
 YOLOv8 with ByteTrack~\cite{bytetrack} tracks the followed person frame by frame. Because ByteTrack uses no appearance information, the identity is lost after occlusions, so a Swin Transformer~\cite{swin} Re-ID model trained on Market-1501 recovers it. While the target is visible, an embedding is stored every 0.3\,s in a rolling gallery of up to 128 vectors; when the track is lost, visible people are matched against this gallery by cosine similarity, and the best match above 0.6 is re-acquired as the target. Re-ID runs asynchronously so it never blocks the tracking loop. People with similar clothing remain the main failure case.
