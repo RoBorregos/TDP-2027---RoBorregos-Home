@@ -1,12 +1,2 @@
 \subsection{Omnidirectional Base}\label{sec:omnibase}
 Until 2026 FRIDA used a differential-drive Dashgo B1, which cannot move sideways: aligning with a table or shelf took several turn-and-drive corrections before every pick or place. This year the team built its own holonomic base, released as open source\footnote{\url{https://github.com/RoBorregos/home-custom-base}}.
-
-\subsubsection{State estimation on the microcontroller.}  % TODO: add one measurement, e.g. final pose error after a closed loop with EKF+IMU vs. wheel-only odometry (firmware switch EKF_TRUST_IMU).
-
-% Diagram left out to stay within 8 pages; re-enable if space allows.
-% \begin{figure}[tb]
-%   \centering
-%   \resizebox{0.85\textwidth}{!}{\input{TDPTemplate-master/omnibase_diagram}}
-%   \caption{Control architecture of the omnidirectional base.}
-%   \label{fig:omnibase}
-% \end{figure}
