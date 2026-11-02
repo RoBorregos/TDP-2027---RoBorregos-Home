@@ -4,25 +4,26 @@
 RRTConnect~\cite{kuffner2000rrt} plans collision-free trajectories, keeping the end-effector upright while carrying an object to pour. To reduce collision-checking time, the planning scene uses simple primitives: RANSAC~\cite{martinez2022ransac} segments the table as an oriented box, and the target object is approximated by spheres fitted to its voxel-downsampled point cloud. The rest of the scene comes from an OctoMap built from the depth camera.
 
 \subsubsection{Picking.}
-Target objects are isolated by fusing 2D detections with depth data, and their type selects the grasp strategy. Flat items (e.g., cutlery) are grasped top-down at the handle end with a force-guarded descent; containers (baskets, bowls, cups) by straddling the rim point nearest the robot; clothes at their highest point. Other objects are solids: RANSAC \cite{martinez2022ransac} fits a sphere and an upright cylinder, a rectangle fits a box, and votes the shape. Candidate grasps that collide with the table, a neighbour or the gripper, or exceed the gripper opening, are discarded; the five best-ranked are executed in turn: the motion planner moves to a pre-grasp pose and a straight Cartesian approach closes in. Grasp Pose Detection (GPD) [4] handles shelf and pouring grasps and is the fallback.
+Target objects are isolated by fusing 2D detections with depth data, and their type selects the grasp strategy. Flat items (e.g., cutlery) are grasped top-down at the handle end with a force-guarded descent; containers (baskets, bowls) by straddling the rim point nearest the robot; clothes at their highest point. Other objects are solids: RANSAC \cite{martinez2022ransac} fits a sphere and an upright cylinder, a rectangle fits a box, and votes the shape. Candidate grasps that collide with the table, a neighbour or the gripper, or exceed the gripper opening, are discarded; the five best-ranked are executed in turn: the motion planner moves to a pre-grasp pose and a straight Cartesian approach closes in. Grasp Pose Detection (GPD)~\cite{ten2017grasp} handles shelf and pouring grasps and is the fallback.
 
 \subsubsection{Placing \& Pouring.}
 Placing scores the whole table with Gaussian kernels that reward free space and penalize nearby objects and edges, multiplied by a directional map for spatial requests (e.g., ``in front of X'', Fig.~\ref{fig:manip}a); only front, back, left, right and ``close to'' are supported. For pouring, PCL~\cite{rusu20113d} estimates the container's rim height, and the object is tilted 15\,cm above it at a fixed angle, without feedback on the poured amount.
 
-\subsubsection{Experimental Validation.} %ME ESTAN BLOQUEANDO 
-Each object was picked 10 times on the real robot, with an operator resetting the scene and confirming that the object was retained (Table~\ref{tab:manipulation_results}). The force-guarded strategy addresses the main failure case of our previous GPD-only pipeline, thin cutlery, which GPD could not grasp reliably. Placing succeeded in 19 of 20 trials, including spatial requests; the single failure came from releasing the object too high. Smooth cylindrical objects and pouring remain to be evaluated systematically. %Chill
+\subsubsection{Experimental Validation.}
+We compared the geometric generator and GPD on the real robot, each without fallback to the other; an operator confirmed every outcome. Seven household objects were tested alone at five table positions (5 trials per method, up to 61\,cm from the arm base), and in five reproducible clutter scenes of 4--5 objects, rebuilt from reference images as in SceneReplica~\cite{khargonkar2024scenereplica}. Geometric grasps held significantly more often (Table~\ref{tab:manipulation_results}; McNemar $p=0.007$ alone, $p=0.012$ in clutter). The stack reported success in 24 of GPD's 36 failures, while the object was not held or was the wrong one. All 67 held objects were placed correctly on free surface. Detector misses (8) were excluded. Low, curved and thin objects remain weak (banana and spoon 1/5 each).
+
+% TODO add the public link to the trial data here
 
 \begin{table}[h]
 \centering
-\caption{Manipulation success rates on the real robot.}
+\caption{Objects held on the real robot, and mean time per held object including failures.}
 \label{tab:manipulation_results}
-\begin{tabular}{llc}
+\begin{tabular}{lccc}
 \toprule
-\textbf{Task} & \textbf{Strategy} & \textbf{Success} \\
+\textbf{Scenario} & \textbf{Geometric} & \textbf{GPD} & \textbf{Time per hold (Geo / GPD)} \\
 \midrule
-Pick spoon & Force-guarded descent & 8/10 \\
-Pick cereal box & GPD & 9/10 \\
-Place (incl. spatial requests) & Heatmap & 19/20 \\
+Alone (7 objects) & 23/35 (66\%) & 12/35 (34\%) & 14.4 / 33.6\,s \\
+Clutter (5 scenes) & 20/24 (83\%) & 11/24 (46\%) & 11.8 / 28.7\,s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -33,12 +34,15 @@ a rack-and-pinion and a high-torque servo, holds objects up to 1\,kg. Its finger
 
 \begin{figure}[H]
 \centering
-\begin{minipage}{0.52\textwidth}\centering
-  \includegraphics[width=\linewidth]{TDPTemplate-master/images/HeatMaps_2027.png}\\(a)
+\begin{minipage}{0.19\textwidth}\centering
+  \includegraphics[width=\linewidth]{TDPTemplate-master/images/HeatMaps_2027_final.png}\\(a)
 \end{minipage}\hfill
-\begin{minipage}{0.44\textwidth}\centering
+\begin{minipage}{0.43\textwidth}\centering
   \includegraphics[width=\linewidth]{TDPTemplate-master/images/gripperGraspingPositions.png}\\(b)
+\end{minipage}\hfill
+\begin{minipage}{0.33\textwidth}\centering
+  \includegraphics[width=\linewidth]{TDPTemplate-master/images/clutter_scene4.png}\\(c)
 \end{minipage}
-\caption{(a) Placement heatmaps for an ``in front of'' request. (b) Gripper grasps from different positions.}
+\caption{(a) Final placement heatmap for an ``in front of'' request. (b) Gripper grasps from different positions. (c) Clutter scene from the experiment.}
 \label{fig:manip}
 \end{figure}
