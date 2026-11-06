@@ -27,7 +27,7 @@
 
 FRIDA's software runs on ROS~2 Jazzy (JetPack~7 on two NVIDIA Jetson AGX Orin) and is split into four modules (vision, HRI, manipulation and navigation), each packaged in its own Docker container (Fig.~\ref{fig:arch}).
 
-\subsubsection{Deployment.} A single launcher detects whether it runs on a Jetson, a CUDA workstation or a CPU-only machine and starts the matching images, so the same commands run on the robot and on development laptops. Containers are pinned to disjoint CPU sets (navigation on cores 0--3, perception and planning on 4--11) so that heavy perception workloads cannot starve the navigation control loop.
+\subsubsection{Deployment.} A single launcher detects whether it runs on a Jetson, a CUDA workstation or a CPU-only machine and starts the matching images, so the same commands run on the robot and on development laptops. Containers are pinned to disjoint CPU sets (navigation on cores 0--3, perception and planning on 4--11) so that heavy perception workloads cannot starve the navigation control loop. A CI pipeline rebuilds only the modules that changed and publishes the CPU and CUDA images on Docker Hub, so development machines can pull them instead of compiling dependencies.
 
 \subsubsection{Communication.} Modules communicate over CycloneDDS. Shared-memory transport avoids copying camera images and point clouds between containers. Speech, TTS and LLM servers run outside ROS and are reached over gRPC/HTTP, keeping their Python/CUDA dependencies isolated from ROS images.
 

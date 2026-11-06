@@ -2,24 +2,23 @@
 
 \subsubsection{Stack overview.}
 FRIDA's navigation is built on Nav2~\cite{macenski2020marathon2}.
-SLAM Toolbox builds 2D maps of the arena from
-the combined scan of the two RPLIDAR~C1 sensors, using graph-based SLAM with
-loop closure, and is then run in localization mode on the saved map. Wheel and
-inertial odometry are fused by an EKF on the base controller
-and provide the motion estimate for localization.
+SLAM Toolbox maps the arena
+from two merged RPLIDAR C1 scans with loop closure, then localizes on the
+saved map using the base EKF odometry. 
 \subsubsection{Planning and Control.}
-Global paths are computed with Nav2's NavFn planner using A* search, while a
+Global paths are computed with Nav2's NavFn planner using A* search, and a 
 Model Predictive Path Integral (MPPI) controller~\cite{williams2016mppi}
-handles local trajectory tracking. The controller uses a holonomic motion
-model, allowing FRIDA to move laterally when approaching furniture or
-navigating narrow passages. The local and global costmaps combine the lidar
-scan with a spatio-temporal voxel layer built from the RGB-D point cloud,
-which captures obstacles outside the lidar plane and lets stale voxels decay
-over time, so that phantom obstacles are cleared even while the robot is
-stationary.
+ with a holonomic motion model tracks them,
+allowing lateral motion near furniture and in narrow passages. The costmaps
+add a spatio-temporal voxel layer from the RGB-D point cloud to the lidar scan,
+capturing obstacles outside the lidar plane while stale voxels decay over time.
 \subsubsection{Behavior Tree and Supervision.}
 Nav2's behavior tree coordinates path planning, goal execution and recovery
-behaviors. A custom supervisor monitors the sensor streams and transforms
-required by SLAM and Nav2. If any of them becomes unavailable, it pauses both
-components and resumes them once the required data is restored. The supervisor
-also provides the task manager with a reduced set of navigation services.
+behaviors. A custom supervisor pauses SLAM and Nav2 when a required sensor stream or transform drops and resumes them once it is restored. 
+\subsubsection{Semantic Navigation.}
+Given the limited range of the object detector, rooms are inspected by stopping in front of each piece of furniture rather than at their center. Annotated furniture poses are checked against the costmap, relocated if
+blocked, and ordered per room with a nearest-neighbor and
+2-opt, visiting the
+least recently inspected surfaces first. In simulation on the map (20 paired start poses), this raised surface
+coverage over the room-center baseline from 77.6\% to 100\% (Wilcoxon
+$p<0.001$), at $1.9\times$ the route length and $2.9\times$ the patrol time.
