@@ -14,16 +14,16 @@ We compared the geometric generator and GPD on the real robot, each without fall
 
 \begin{table}[h]
 \centering
-\caption{Objects held on the real robot, and mean time per held object including failures.}
+\caption{Objects held on the real robot. Mean time per held object, failures included, in parentheses.}
 \label{tab:manipulation_results}
-\begin{tabular}{lccc}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lccc}
 \toprule
-\textbf{Scenario} & \textbf{Geometric} & \textbf{GPD} & \textbf{Time per hold (Geo / GPD)} \\
+\textbf{Scenario} & \textbf{Geometric} & \textbf{GPD} & \textbf{McNemar $p$} \\
 \midrule
-Alone (7 objects) & 23/35 (66\%) & 12/35 (34\%) & 14.4 / 33.6\,s \\
-Clutter (5 scenes) & 20/24 (83\%) & 11/24 (46\%) & 11.8 / 28.7\,s \\
+Alone (7 objects, 35 trials)  & 66\% (14.4\,s) & 34\% (33.6\,s) & 0.007 \\
+Clutter (5 scenes, 24 trials) & 83\% (11.8\,s) & 46\% (28.7\,s) & 0.012 \\
 \bottomrule
-\end{tabular}
+\end{tabular*}
 \end{table}
 
 \subsubsection{Custom Gripper.}
