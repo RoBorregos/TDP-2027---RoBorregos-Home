@@ -10,7 +10,7 @@ Objects are segmented by fusing 2D detections with depth. Solid objects are fitt
 Placing scores the whole table with Gaussian kernels that reward free space and penalize nearby objects and edges, multiplied by a directional map for spatial requests (e.g., ``in front of X'', Fig.~\ref{fig:manip}a); only front, back, left, right and ``close to'' are supported. For pouring, PCL~\cite{rusu20113d} estimates the container's rim height, and the object is tilted 15\,cm above it at a fixed angle, without feedback on the poured amount.
 
 \subsubsection{Experimental Validation.}
-We compared the geometric generator and GPD on the real robot, each without fallback to the other; an operator registered every outcome. Seven household objects were tested alone at five table positions up to 61\,cm from the arm base, once per position and method. Five clutter scenes were then rebuilt from reference images, as in SceneReplica~\cite{khargonkar2024scenereplica}, so both methods faced the same layout. Geometric grasps held significantly more often (Table~\ref{tab:manipulation_results}; McNemar $p=0.007$ alone, $p=0.012$ in clutter). The stack reported success in 24 of GPD's 36 failures. All 67 held objects were placed correctly on free surface. Low, curved and thin objects remain weak (banana and spoon 1/5 each). Trial data: \href{https://github.com/RoBorregos/home2/tree/main/manipulation/benchmarks/2026-11}{\texttt{home2/manipulation/benchmarks}}.
+We compared the geometric generator and GPD on the real robot, each without fallback to the other; an operator registered every outcome. Seven household objects were tested alone at five table positions up to 61\,cm from the arm base, once per position and method. Five clutter scenes were then rebuilt from reference images, as in SceneReplica~\cite{khargonkar2024scenereplica}, so both methods faced the same layout. Geometric grasps held significantly more often (Table~\ref{tab:manipulation_results}). The stack reported success in 24 of GPD's 36 failures. All 67 held objects were placed correctly on free surface. Low, curved and thin objects remain weak (banana and spoon 1/5 each). Trial data: \href{https://github.com/RoBorregos/home2/tree/main/manipulation/benchmarks/2026-11}{\texttt{home2/manipulation/benchmarks}}.
 
 \begin{table}[h]
 \centering
@@ -31,15 +31,13 @@ FRIDA's low-cost, open-source\footnote{\url{https://grabcad.com/library/robotic-
 
 \begin{figure}[H]
 \centering
-\begin{minipage}{0.19\textwidth}\centering
-  \includegraphics[width=\linewidth]{TDPTemplate-master/images/HeatMaps_2027_final.png}\\(a)
-\end{minipage}\hfill
-\begin{minipage}{0.43\textwidth}\centering
-  \includegraphics[width=\linewidth]{TDPTemplate-master/images/Gripper_Soft.png}\\(b)
-\end{minipage}\hfill
-\begin{minipage}{0.33\textwidth}\centering
-  \includegraphics[width=\linewidth]{TDPTemplate-master/images/clutter_scene4.png}\\(c)
-\end{minipage}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{ccc}
+\includegraphics[height=2.2cm]{TDPTemplate-master/images/HeatMaps_2027_final.png} &
+\includegraphics[height=2.2cm]{TDPTemplate-master/images/Gripper_Soft.png} &
+\includegraphics[height=2.2cm]{TDPTemplate-master/images/clutter_scene4.png} \\
+(a) & (b) & (c)
+\end{tabular}
 \caption{(a) Final placement heatmap for an ``in front of'' request. (b) Gripper grasps from different positions. (c) Clutter scene from the experiment.}
 \label{fig:manip}
 \end{figure}
