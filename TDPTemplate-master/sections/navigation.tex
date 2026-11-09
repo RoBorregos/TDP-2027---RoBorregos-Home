@@ -15,10 +15,3 @@ capturing obstacles outside the LiDAR plane while stale voxels decay over time.
 \subsubsection{Behavior Tree and Supervision.}
 Nav2's behavior tree coordinates path planning, goal execution and recovery
 behaviors. A custom supervisor pauses SLAM and Nav2 when a required sensor stream or transform drops and resumes them once it is restored. 
-\subsubsection{Semantic Navigation.}
-Given the limited range of the object detector, rooms are inspected by stopping in front of each piece of furniture rather than at their center. Annotated furniture poses are checked against the costmap, relocated if
-blocked, and ordered per room with a nearest-neighbor and
-2-opt, visiting the
-least recently inspected surfaces first. In simulation on the map (20 paired start poses), this raised surface
-coverage over the room-center baseline from 77.6\% to 100\% (Wilcoxon
-$p<0.001$), at $1.9\times$ the route length and $2.9\times$ the patrol time.

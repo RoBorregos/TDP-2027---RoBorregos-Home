@@ -7,7 +7,8 @@
 \begin{tikzpicture}[font=\scriptsize, node distance=3mm and 2mm,
   box/.style={draw, rounded corners=1pt, minimum height=5mm, align=center, inner sep=2pt},
   mod/.style={box, minimum width=20mm, fill=gray!10}]
-\node[box, minimum width=86mm, fill=gray!25] (tm) {Task managers: FSM per task \;---\; GPSR: behavior tree built at run time};
+% \node[box, minimum width=86mm, fill=gray!25] (tm) {Task managers: FSM per task \;---\; GPSR: behavior tree built at run time};
+\node[box, minimum width=86mm, fill=gray!25] (tm) {Task managers: FSM per task / dynamic behavior tree};
 \node[box, minimum width=86mm, below=of tm] (sm) {Subtask managers: timeout-guarded, status codes, \texttt{@mockable}};
 \node[mod, below=of sm, xshift=-33mm] (vis) {Vision};
 \node[mod, right=of vis] (hri) {HRI};
@@ -29,8 +30,11 @@ FRIDA's software runs on ROS~2 Jazzy (JetPack~7 on two NVIDIA Jetson AGX Orin) a
 
 \subsubsection{Deployment.} A single launcher detects whether it runs on a Jetson, a CUDA workstation or a CPU-only machine and starts the matching images, so the same commands run on the robot and on development laptops. Containers are pinned to disjoint CPU sets (navigation on cores 0--3, perception and planning on 4--11) so that heavy perception workloads cannot starve the navigation control loop. A CI pipeline rebuilds only the modules that changed and publishes the CPU and CUDA images on Docker Hub, so development machines can pull them instead of compiling dependencies.
 
-\subsubsection{Communication.} Modules communicate over CycloneDDS. Shared-memory transport avoids copying camera images and point clouds between containers. Speech, TTS and LLM servers run outside ROS and are reached over gRPC/HTTP, keeping their Python/CUDA dependencies isolated from ROS images.
+% \subsubsection{Communication.} Modules communicate over CycloneDDS. Shared-memory transport avoids copying camera images and point clouds between containers. Speech, TTS and LLM servers run outside ROS and are reached over gRPC/HTTP, keeping their Python/CUDA dependencies isolated from ROS images.
+\subsubsection{Communication.} Modules communicate over CycloneDDS with iceoryx shared-memory transport (managed by its RouDi daemon), so camera images and point clouds are passed between containers without being copied. STT, TTS and LLM servers run outside ROS as standalone services reached over gRPC/HTTP; their Python and CUDA dependencies would otherwise conflict with the ROS images, and they can be updated or restarted without touching the rest of the stack.
 
-\subsubsection{Task execution.} Each task is coordinated by a task manager: structured tests use finite state machines, while GPSR executes behavior trees built at run time from the interpreted commands (Sec.~\ref{sec:scheduling}). Task managers reach the modules only through subtask managers that wrap each module's ROS~2 interfaces. Every call waits for its service with a timeout and returns a status code instead of raising, so an unavailable module becomes a failure the task can handle (retry, skip or continue) rather than a crash.
+% \subsubsection{Task execution.} Each task is coordinated by a task manager: structured tests use finite state machines, while GPSR executes behavior trees built at run time from the interpreted commands (Sec.~\ref{sec:scheduling}). Task managers reach the modules only through subtask managers that wrap each module's ROS~2 interfaces. Every call waits for its service with a timeout and returns a status code instead of raising, so an unavailable module becomes a failure the task can handle (retry, skip or continue) rather than a crash.
+
+\subsubsection{Task execution.} Each task is coordinated by a task manager: tasks with a fixed sequence of steps (e.g., Receptionist, Restaurant) use finite state machines, while GPSR executes behavior trees built at run time from the interpreted commands (Sec.~\ref{sec:scheduling}). Task managers reach the modules only through subtask managers that wrap each module's ROS interfaces. Every call waits for its service with a timeout and returns a status code instead of throwing an exception, so an unavailable module becomes a failure the task can handle (retry, skip or continue) rather than a crash.
 
 % \subsubsection{Testing.} Every subtask function is declared mockable, and an automated test enforces it, so any module can be replaced by mocks to test a task manager without the robot. CI builds the ROS~2 workspace on every push and pull request, and rebuilds and publishes the images to Docker Hub whenever their Dockerfiles change.
