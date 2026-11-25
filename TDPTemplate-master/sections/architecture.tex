@@ -2,27 +2,54 @@
 % FRIDA's software runs on ROS~2 Jazzy and is split into four modules (vision, HRI, manipulation and navigation), each in its own Docker container. A launcher detects whether it runs on a Jetson, a CUDA workstation or a CPU-only machine and starts the matching images, which CI builds on every push and pull request and publishes to Docker Hub. Modules communicate over CycloneDDS; speech, TTS and the LLM servers run outside ROS and are reached over gRPC or HTTP. Each task is coordinated by a task manager: most are finite state machines, while GPSR executes behavior trees built at run time from the interpreted commands. Task managers reach the modules only through subtask managers that wrap each module's ROS~2 interfaces. Every call waits for its service with a timeout and returns a status code instead of raising, so an unavailable module becomes a failure the task can handle (retry, skip or continue) rather than a crash; the same layer lets any module be mocked in tests.
 \section{Robot Architecture}
 
-\begin{figure}[H]
+% \begin{figure}[H]
+% \centering
+% \begin{tikzpicture}[font=\scriptsize, node distance=3mm and 2mm,
+%   box/.style={draw, rounded corners=1pt, minimum height=5mm, align=center, inner sep=2pt},
+%   mod/.style={box, minimum width=20mm, fill=gray!10}]
+% % \node[box, minimum width=86mm, fill=gray!25] (tm) {Task managers: FSM per task \;---\; GPSR: behavior tree built at run time};
+% \node[box, minimum width=86mm, fill=gray!25] (tm) {Task managers: FSM per task / dynamic behavior tree};
+% \node[box, minimum width=86mm, below=of tm] (sm) {Subtask managers: timeout-guarded, status codes, \texttt{@mockable}};
+% \node[mod, below=of sm, xshift=-33mm] (vis) {Vision};
+% \node[mod, right=of vis] (hri) {HRI};
+% \node[mod, right=of hri] (man) {Manipulation};
+% \node[mod, right=of man] (nav) {Navigation};
+% \node[box, below=of $(vis.south)!0.5!(hri.south)$, minimum width=40mm, text width=38mm, dashed] (grpc) {STT, TTS, LLM, VLM servers\\(gRPC / HTTP, outside ROS)};
+% \node[box, below=of $(man.south)!0.5!(nav.south)$, minimum width=40mm, text width=38mm] (hw) {Drivers: arm, gripper,\\cameras, LiDARs, base};
+% \draw[->] (tm) -- (sm);
+% \foreach \m in {vis,hri,man,nav} \draw[->] (sm.south -| \m.north) -- (\m.north);
+% \draw[->] (hri) -- (grpc.north -| hri.south);
+% \draw[->] (man.south) -- (hw.north -| man.south);
+% \draw[->] (nav.south) -- (hw.north -| nav.south);
+% \end{tikzpicture}
+% \caption{Software architecture. Each module (vision, HRI, manipulation and navigation) runs in its own Docker container and communicates over CycloneDDS with shared memory.}
+% \label{fig:arch}
+% \end{figure}
+\begin{figure}[t]
 \centering
-\begin{tikzpicture}[font=\scriptsize, node distance=3mm and 2mm,
+\begin{tikzpicture}[font=\scriptsize, node distance=3.5mm and 5mm,
   box/.style={draw, rounded corners=1pt, minimum height=5mm, align=center, inner sep=2pt},
-  mod/.style={box, minimum width=20mm, fill=gray!10}]
-% \node[box, minimum width=86mm, fill=gray!25] (tm) {Task managers: FSM per task \;---\; GPSR: behavior tree built at run time};
-\node[box, minimum width=86mm, fill=gray!25] (tm) {Task managers: FSM per task / dynamic behavior tree};
-\node[box, minimum width=86mm, below=of tm] (sm) {Subtask managers: timeout-guarded, status codes, \texttt{@mockable}};
-\node[mod, below=of sm, xshift=-33mm] (vis) {Vision};
-\node[mod, right=of vis] (hri) {HRI};
-\node[mod, right=of hri] (man) {Manipulation};
-\node[mod, right=of man] (nav) {Navigation};
-\node[box, below=of $(vis.south)!0.5!(hri.south)$, minimum width=40mm, text width=38mm, dashed] (grpc) {STT, TTS, LLM, VLM servers\\(gRPC / HTTP, outside ROS)};
-\node[box, below=of $(man.south)!0.5!(nav.south)$, minimum width=40mm, text width=38mm] (hw) {Drivers: arm, gripper,\\cameras, LiDARs, base};
-\draw[->] (tm) -- (sm);
-\foreach \m in {vis,hri,man,nav} \draw[->] (sm.south -| \m.north) -- (\m.north);
-\draw[->] (hri) -- (grpc.north -| hri.south);
-\draw[->] (man.south) -- (hw.north -| man.south);
-\draw[->] (nav.south) -- (hw.north -| nav.south);
+  mod/.style={box, text width=24mm, minimum height=8mm, fill=gray!10},
+  drv/.style={box, text width=24mm, minimum height=7mm, fill=white},
+  link/.style={<->, >=stealth}]
+\node[mod] (hri) {\textbf{HRI}\\STT, TTS, LLM$^{*}$};
+\node[mod, right=of hri] (vis) {\textbf{Vision}\\detectors, VLM$^{*}$};
+\node[mod, right=of vis] (man) {\textbf{Manipulation}\\grasp, place};
+\node[mod, right=of man] (nav) {\textbf{Navigation}\\SLAM, Nav2};
+\node[box, fill=gray!10, above=7mm of $(vis.north)!0.5!(man.north)$, minimum width=113mm] (sm) {Subtask managers: one interface per module, timeouts and status codes};
+\node[box, fill=gray!25, above=of sm, minimum width=113mm] (tm) {Task managers: finite state machines per task; behavior trees for GPSR};
+\node[drv, below=of hri] (dh) {Mic array, speaker,\\display};
+\node[drv, below=of vis] (dv) {RGB-D cameras};
+\node[drv, below=of man] (dm) {xArm 6, gripper};
+\node[drv, below=of nav] (dn) {LiDARs, mecanum base};
+\draw[link] (tm) -- (sm);
+\foreach \m in {hri,vis,man,nav} \draw[link] (sm.south -| \m.north) -- (\m.north);
+\foreach \m/\d in {hri/dh,vis/dv,man/dm,nav/dn} \draw[link] (\m) -- (\d);
+\draw[->, >=stealth, dashed] (vis) -- (hri);
+\draw[link, dashed] (vis) -- (man);
+\draw[->, >=stealth, dashed] ([xshift=4mm]vis.north) to[out=25, in=155, looseness=0.8] ([xshift=-4mm]nav.north);
 \end{tikzpicture}
-\caption{Software architecture. Each module (vision, HRI, manipulation and navigation) runs in its own Docker container and communicates over CycloneDDS with shared memory.}
+\caption{Software architecture. Each module runs in its own Docker container. Solid arrows are ROS~2 requests and results over CycloneDDS; dashed arrows are direct links from vision to other modules: 3D detections requested by manipulation, person tracking for navigation, and the camera feed and detections shown on the HRI display. $^{*}$Model servers run outside ROS and are reached over gRPC/HTTP.}
 \label{fig:arch}
 \end{figure}
 

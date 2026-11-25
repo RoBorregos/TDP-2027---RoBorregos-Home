@@ -10,7 +10,7 @@ Objects are segmented by fusing 2D detections with depth. Solid objects are fitt
 Placement scores every position on the table with Gaussian kernels that reward free space and penalize nearby objects and edges, multiplied by a directional map for spatial requests (e.g., ``in front of X''). Only front, back, left, right, and ``close to'' are supported. For pouring, PCL~\cite{rusu20113d} estimates the container's rim height, and the object is held 15\,cm above it and tilted at a fixed angle. The 15\,cm offset is an empirical heuristic chosen to avoid contact with any rim.
 
 \subsubsection{Experimental Validation.}
-We compared the geometric generator and GPD on the real robot, each without fallback to the other; an operator registered every outcome. Seven household objects were tested alone at five table positions up to 61\,cm from the arm base, once per position and method. Five clutter scenes were then rebuilt from reference images, as in SceneReplica~\cite{khargonkar2024scenereplica}, so both methods faced the same layout. Geometric grasps held significantly more often (Table~\ref{tab:manipulation_results}). The stack reported success in 24 of GPD's 36 failures. All 67 held objects were placed correctly on free surface. Low, curved and thin objects remain weak (banana and spoon 1/5 each). Trial data: \href{https://github.com/RoBorregos/home2/tree/main/manipulation/benchmarks/2026-11}{\texttt{home2/manipulation/benchmarks}}.
+We compared the geometric generator and GPD on the real robot, each without fallback to the other; an operator registered every outcome. Seven household objects were tested alone at five table positions up to 61\,cm from the arm base, once per position and method. Five clutter scenes were then rebuilt from reference images, as in SceneReplica~\cite{khargonkar2024scenereplica}, so both methods faced the same layout. Geometric grasps held significantly more often (Table~\ref{tab:manipulation_results}). All 67 held objects were placed correctly on free surface. Low, curved and thin objects remain the main weakness: the banana and the spoon were each held in only one of five trials. Trial data: \href{https://github.com/RoBorregos/home2/tree/main/manipulation/benchmarks/2026-11}{\texttt{home2/manipulation/benchmarks}}.
 
 \begin{table}[h]
 \centering
@@ -20,14 +20,14 @@ We compared the geometric generator and GPD on the real robot, each without fall
 \toprule
 \textbf{Scenario} & \textbf{Geometric} & \textbf{GPD} & \textbf{McNemar $p$} \\
 \midrule
-Alone (7 objects, 35 trials)  & 66\% (14.4\,s) & 34\% (33.6\,s) & 0.007 \\
+Empty (7 objects, 35 trials)  & 66\% (14.4\,s) & 34\% (33.6\,s) & 0.007 \\
 Clutter (5 scenes, 24 trials) & 83\% (11.8\,s) & 46\% (28.7\,s) & 0.012 \\
 \bottomrule
 \end{tabular*}
 \end{table}
 
 \subsubsection{Custom Gripper.}
-FRIDA's low-cost, open-source\footnote{\url{https://grabcad.com/library/gripper-soft-2}} parallel gripper is based on the UMI design~\cite{chi2024universal}: a high-torque servo drives the fingers through a rack and pinion, allowing it to hold payloads of up to 1\,kg. The 3D-printed TPU fingers have an inner structure that deforms to increase the contact area by encircling the object and thus the grip on the object. (Fig.~\ref{fig:manip}a).
+FRIDA's low-cost (\$60 USD), open-source\footnote{\url{https://grabcad.com/library/gripper-soft-2}} parallel gripper is based on the UMI design~\cite{chi2024universal}: a high-torque servo drives the fingers through a rack and pinion, allowing it to hold payloads of up to 1\,kg. The 3D-printed TPU fingers have an inner structure that deforms to increase the contact area by encircling the object and thus the grip on the object (Fig.~\ref{fig:manip}a). This soft grip enables more accurate handling of objects of varying shapes and sizes, as present in the cluttered scene (Fig.~\ref{fig:manip}b). 
 
 \begin{figure}[H]
 \centering

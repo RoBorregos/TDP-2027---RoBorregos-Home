@@ -13,10 +13,10 @@ allowing lateral motion near furniture and in narrow passages. The costmaps
 add a spatio-temporal voxel layer from the RGB-D point cloud to the LiDAR scan,
 capturing obstacles outside the LiDAR plane while stale voxels decay over time.
 \subsubsection{Behavior Tree and Supervision.}
-Nav2's behavior tree coordinates path planning, goal execution and recovery
+Nav2's behavior tree coordinates path planning, goal execution, and recovery
 behaviors. A custom supervisor pauses SLAM and Nav2 when a required sensor stream or transform drops and resumes them once it is restored. 
 \subsubsection{Semantic Navigation.}
-Given the limited range of the object detector, rooms are inspected by stopping in front of each piece of furniture rather than at their center. Annotated furniture poses are checked against the costmap, relocated if
+Since detections are only used within 2\,m of the arm-mounted camera, rooms are inspected by stopping in front of each piece of furniture rather than at their center. Annotated furniture poses are checked against the costmap, relocated if
 blocked, and ordered per room with a nearest-neighbor and
 2-opt, visiting the
 least recently inspected surfaces first.
